@@ -30,11 +30,8 @@ const navItems = [
   { path: "/expenses", label: "Expenses", icon: List },
   { path: "/groups", label: "Groups", icon: Users },
   { path: "/budget", label: "Budget", icon: PiggyBank },
-  { path: "/settings", label: "Settings", icon: Settings },
-  { path: "/profile", label: "Profile", icon: Users }, // Using Users icon for Profile
-];
-
-interface SidebarProps {
+          { path: "/settings", label: "Settings", icon: Settings },
+      ];interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
 }

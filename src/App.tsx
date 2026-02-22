@@ -36,7 +36,7 @@ const App = () => (
                           <Route path="/groups" element={<AuthGuard><Groups /></AuthGuard>} />
                           <Route path="/budget" element={<AuthGuard><Budget /></AuthGuard>} />
                           <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
-                          <Route path="/profile" element={<AuthGuard><UserProfilePage /></AuthGuard>} />
+                          <Route path="/settings/profile" element={<AuthGuard><UserProfilePage /></AuthGuard>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>
