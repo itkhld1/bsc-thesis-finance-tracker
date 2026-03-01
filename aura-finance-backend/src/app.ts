@@ -17,7 +17,11 @@ app.use(express.json());
 
 // Global logging middleware
 app.use((req, res, next) => {
-  console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`);
+  });
   next();
 });
 
@@ -186,6 +190,57 @@ app.post('/expenses/parse-voice', protect, async (req, res) => {
   for (const cat of categories_list) {
     if (transcript.toLowerCase().includes(cat.id)) {
       categoryId = cat.id;
+      break;
+    }
+  }
+
+  res.json({ amount, categoryId, description, date });
+});
+
+app.post('/expenses/parse-receipt', protect, async (req, res) => {
+  const { text } = req.body;
+  let amount = null;
+  let categoryId = "other";
+  let description = "Receipt Expense";
+  let date = new Date().toISOString().split('T')[0];
+
+  const normalizedText = text.toLowerCase()
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/\*/g, ''); // Remove * often found in OCR
+
+  // 1. Better Amount Parsing
+  // First, try to find the line with "TOPLAM" or "TUTAR" (Turkish for Total)
+  const totalMatch = normalizedText.match(/(toplam|tutar|total)\s*(\d+([.,]\d+)?)/);
+  if (totalMatch) {
+    amount = parseFloat(totalMatch[2].replace(',', '.'));
+  } else {
+    // Fallback: Get the largest number in the text
+    const amountMatches = normalizedText.match(/\d+([.,]\d+)?/g);
+    if (amountMatches) {
+      const amounts = amountMatches.map((m: string) => parseFloat(m.replace(',', '.')));
+      amount = Math.max(...amounts);
+    }
+  }
+
+  // 2. Keyword Search
+  const categoryKeywords: Record<string, string[]> = {
+    food: ["yemek", "restoran", "lokanta", "kahve", "simit", "corba", "kebap", "burger", "pizza", "mutfak", "migros", "bim", "sok", "carrefour"],
+    shopping: ["market", "alisveris", "kıyafet", "ayakkabı", "fatura", "avm", "h&m", "zara", "boyner"],
+    transport: ["benzin", "otobus", "taksi", "metro", "akbil", "yakit", "otopark", "kopru", "shell", "opet", "bp"],
+    utilities: ["su", "elektrik", "dogalgaz", "internet", "telefon", "kira", "aidat", "turkcell", "vodafone"],
+    health: ["eczane", "doktor", "ilac", "hastane", "saglik", "disci"],
+    entertainment: ["sinema", "tiyatro", "konser", "oyun", "netflix", "spotify", "eglence"],
+    travel: ["ucak", "otel", "tatil", "bilet", "pasaport", "konaklama", "thy", "pegasus"]
+  };
+
+  for (const [id, keywords] of Object.entries(categoryKeywords)) {
+    if (keywords.some(keyword => normalizedText.includes(keyword))) {
+      categoryId = id;
       break;
     }
   }
