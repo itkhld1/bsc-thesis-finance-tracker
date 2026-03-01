@@ -241,7 +241,7 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
     .replace(/ı/g, 'i')
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c')
-    .replace(/\*/g, ''); // Remove * often found in OCR
+    .replace(/\*/g, '');
 
   // 1. IMPROVED AMOUNT PARSING
   // Strategy A: Look for "TOPLAM", "TUTAR" or "TOTAL" followed by a price format
@@ -286,6 +286,98 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
   res.json({ amount, categoryId, description, date });
 });
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.get('/expenses/history', protect, async (req, res) => {
+  try {
+    // 1. fetch all expenses for the user
+    const result = await pool.query(
+      'SELECT amount, date FROM "Expense" WHERE "userId" = $1 ORDER BY date ASC',
+      [req.user?.id]
+    );
 
-process.on('beforeExit', async () => await pool.end());
+    const expenses = result.rows;
+
+    // 2. create a map to store montly totals
+    const monthlyTotals: Record<string, number> = {};
+
+    expenses.forEach(exp => {
+      const date = new Date(exp.date);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+
+      monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
+    }); 
+
+    // 3. Convert map to a sorted array of objects
+    const history = Object.entries(monthlyTotals)
+      .map(([month, amount]) => ({ month, amount }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    res.json(history);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching history', details: error.message });
+  }
+});
+
+app.get('/expenses/forecast', protect, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT amount, date FROM "Expense" WHERE "userId" = $1 ORDER BY date ASC',
+      [req.user?.id]
+    );
+
+    const expenses = result.rows;
+    const monthlyTotals: Record<string, number> = {};
+
+    expenses.forEach(exp => {
+      const date = new Date(exp.date);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
+    }); 
+
+    const history = Object.entries(monthlyTotals)
+      .map(([month, amount]) => ({ month, amount }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    if (history.length < 2) {
+      return res.json({ 
+        prediction: history.length === 1 ? history[0].amount : 0,
+        trend: "neutral",
+        confidence: 50,
+        message: "Need more data for accurate AI prediction"
+      });
+    }
+
+    // --- SIMPLE PREDICTION LOGIC (Thesis Concept: Linear Trend) ---
+    const amounts = history.map(h => h.amount);
+    const n = amounts.length;
+    
+    // Calculate simple growth rate between months
+    let totalGrowth = 0;
+    for (let i = 1; i < n; i++) {
+      totalGrowth += (amounts[i] - amounts[i-1]);
+    }
+    const avgGrowth = totalGrowth / (n - 1);
+    
+    // Predict next month based on last month + avg growth
+    const lastAmount = amounts[n-1];
+    const prediction = Math.max(0, lastAmount + avgGrowth);
+    
+    // Determine trend direction
+    const trend = avgGrowth > 0 ? "increasing" : avgGrowth < 0 ? "decreasing" : "stable";
+    
+    // Confidence score based on data points (Max 95%)
+    const confidence = Math.min(95, 60 + (n * 5));
+
+    res.json({
+      prediction: parseFloat(prediction.toFixed(2)),
+      trend,
+      confidence,
+      historyCount: n,
+      nextMonth: "Next Month" // We could calculate the actual month string here
+    });
+
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error forecasting', details: error.message });
+  }
+});
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
