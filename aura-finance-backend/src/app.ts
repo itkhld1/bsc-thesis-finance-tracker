@@ -213,29 +213,37 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
     .replace(/ç/g, 'c')
     .replace(/\*/g, ''); // Remove * often found in OCR
 
-  // 1. Better Amount Parsing
-  // First, try to find the line with "TOPLAM" or "TUTAR" (Turkish for Total)
-  const totalMatch = normalizedText.match(/(toplam|tutar|total)\s*(\d+([.,]\d+)?)/);
+  // 1. IMPROVED AMOUNT PARSING
+  // Strategy A: Look for "TOPLAM", "TUTAR" or "TOTAL" 
+  // We now allow for noise characters like 'x', '*', ':', or '=' between the word and the number
+  const totalMatch = normalizedText.match(/(toplam|tutar|total|ara toplam|top)\s*[:=x\*]*\s*(\d{1,5}([.,]\d{2})?)/);
+  
   if (totalMatch) {
     amount = parseFloat(totalMatch[2].replace(',', '.'));
   } else {
-    // Fallback: Get the largest number in the text
-    const amountMatches = normalizedText.match(/\d+([.,]\d+)?/g);
-    if (amountMatches) {
-      const amounts = amountMatches.map((m: string) => parseFloat(m.replace(',', '.')));
-      amount = Math.max(...amounts);
+    // Strategy B: Find all potential prices (numbers with 2 decimals) and take the highest
+    // This ignores barcodes which are usually long integers or don't follow price formatting
+    const priceMatches = normalizedText.match(/\d+([.,]\d{2})/g);
+    if (priceMatches) {
+      const prices = priceMatches
+        .map((m: string) => parseFloat(m.replace(',', '.')))
+        .filter(n => n > 0 && n < 30000); // Filter out numbers that are too large (likely barcodes or IDs)
+      
+      if (prices.length > 0) {
+        amount = Math.max(...prices);
+      }
     }
   }
 
-  // 2. Keyword Search
+  // 2. REFINED KEYWORD SEARCH
   const categoryKeywords: Record<string, string[]> = {
-    food: ["yemek", "restoran", "lokanta", "kahve", "simit", "corba", "kebap", "burger", "pizza", "mutfak", "migros", "bim", "sok", "carrefour"],
-    shopping: ["market", "alisveris", "kıyafet", "ayakkabı", "fatura", "avm", "h&m", "zara", "boyner"],
-    transport: ["benzin", "otobus", "taksi", "metro", "akbil", "yakit", "otopark", "kopru", "shell", "opet", "bp"],
-    utilities: ["su", "elektrik", "dogalgaz", "internet", "telefon", "kira", "aidat", "turkcell", "vodafone"],
-    health: ["eczane", "doktor", "ilac", "hastane", "saglik", "disci"],
-    entertainment: ["sinema", "tiyatro", "konser", "oyun", "netflix", "spotify", "eglence"],
-    travel: ["ucak", "otel", "tatil", "bilet", "pasaport", "konaklama", "thy", "pegasus"]
+    food: ["yemek", "restoran", "lokanta", "kahve", "simit", "corba", "kebap", "burger", "pizza", "mutfak", "migros", "bim", "sok", "carrefour", "a101", "firin", "pastane"],
+    shopping: ["market", "alisveris", "kıyafet", "ayakkabı", "fatura", "avm", "h&m", "zara", "boyner", "gratis", "watsons", "rossmann", "lcw", "koton", "flo", "decathlon", "ikea"],
+    transport: ["benzin", "otobus", "taksi", "metro", "akbil", "yakit", "otopark", "kopru", "shell", "opet", "bp", "total", "petrol", "marmaray"],
+    utilities: ["su", "elektrik", "dogalgaz", "internet", "telefon", "kira", "aidat", "turkcell", "vodafone", "telekom"],
+    health: ["eczane", "doktor", "ilac", "hastane", "saglik", "disci", "optik"],
+    entertainment: ["sinema", "tiyatro", "konser", "oyun", "netflix", "spotify", "eglence", "pub", "bar"],
+    travel: ["ucak", "otel", "tatil", "bilet", "pasaport", "konaklama", "thy", "pegasus", "booking", "airbnb"]
   };
 
   for (const [id, keywords] of Object.entries(categoryKeywords)) {
