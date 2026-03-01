@@ -43,8 +43,14 @@ if (!jwtSecret) throw new Error('JWT_SECRET not set');
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 pool.connect()
-  .then(client => {
+  .then(async client => {
     console.log('Connected to PostgreSQL database!');
+    // Ensure income column exists
+    try {
+      await client.query('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS income DECIMAL(10,2) DEFAULT 0');
+    } catch (e) {
+      console.log('Income column already exists or error adding it');
+    }
     client.release();
   })
   .catch(err => console.error('DB Connection Error:', err.message));
@@ -70,7 +76,31 @@ const protect = (req: Request, res: Response, next: NextFunction) => {
 app.get('/', (req, res) => res.send('Aura Finance Backend is running!'));
 
 // PING TEST - To verify the server updated
-app.get('/ping', (req, res) => res.json({ message: 'pong', timestamp: new Date() }));
+app.get('/ping', (req, res) => res.json({ message: 'pong', version: '1.1', timestamp: new Date() }));
+
+// USER INFO
+app.get('/auth/me', protect, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, email, name, username, income FROM "User" WHERE id = $1', [req.user?.id]);
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching user', details: error.message });
+  }
+});
+
+app.put('/auth/user', protect, async (req, res) => {
+  const { income } = req.body;
+  console.log(`Updating income for user ${req.user?.id} to: ${income}`);
+  try {
+    const result = await pool.query(
+      'UPDATE "User" SET income = $1 WHERE id = $2 RETURNING id, email, name, username, income',
+      [income, req.user?.id]
+    );
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error updating income', details: error.message });
+  }
+});
 
 // CATEGORIES
 app.get('/categories', async (req, res) => {
@@ -90,7 +120,7 @@ app.post('/auth/register', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO "User" (email, password_hash, name, username) VALUES ($1, $2, $3, $4) RETURNING id, email, name, username',
+      'INSERT INTO "User" (email, password_hash, name, username, income) VALUES ($1, $2, $3, $4, 0) RETURNING id, email, name, username, income',
       [email, hashedPassword, name, username]
     );
     const user = result.rows[0];
@@ -105,11 +135,11 @@ app.post('/auth/register', async (req, res) => {
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const result = await pool.query('SELECT id, email, name, username, password_hash FROM "User" WHERE email = $1', [email]);
+    const result = await pool.query('SELECT id, email, name, username, password_hash, income FROM "User" WHERE email = $1', [email]);
     const user = result.rows[0];
     if (user && await bcrypt.compare(password, user.password_hash)) {
       const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '1h' });
-      return res.json({ token, user: { id: user.id, email: user.email, name: user.name, username: user.username } });
+      return res.json({ token, user: { id: user.id, email: user.email, name: user.name, username: user.username, income: user.income } });
     }
     res.status(401).json({ message: 'Invalid credentials' });
   } catch (error: any) {
@@ -214,9 +244,9 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
     .replace(/\*/g, ''); // Remove * often found in OCR
 
   // 1. IMPROVED AMOUNT PARSING
-  // Strategy A: Look for "TOPLAM", "TUTAR" or "TOTAL" 
-  // We now allow for noise characters like 'x', '*', ':', or '=' between the word and the number
-  const totalMatch = normalizedText.match(/(toplam|tutar|total|ara toplam|top)\s*[:=x\*]*\s*(\d{1,5}([.,]\d{2})?)/);
+  // Strategy A: Look for "TOPLAM", "TUTAR" or "TOTAL" followed by a price format
+  // Handles formats like "TOPLAM 756,37" or "TUTAR: 120.00"
+  const totalMatch = normalizedText.match(/(toplam|tutar|total|ara toplam|top)\s*[:=]*\s*(\d{1,5}([.,]\d{2})?)/);
   
   if (totalMatch) {
     amount = parseFloat(totalMatch[2].replace(',', '.'));
