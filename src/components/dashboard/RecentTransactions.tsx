@@ -1,11 +1,11 @@
 import { Utensils, Car, Gamepad2, ShoppingBag, Zap, Heart, Plane, MoreHorizontal } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockExpenses } from "@/data/mockData"; // Keep mockExpenses for now
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useCategories } from "@/hooks/useCategories"; // Import the new hook
-import { Loader2 } from "lucide-react"; // Import Loader2 for loading indicator
+import { useCategories } from "@/hooks/useCategories";
+import { Loader2 } from "lucide-react";
+import { Expense } from "@/hooks/useExpenses";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Utensils,
@@ -18,13 +18,15 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   MoreHorizontal,
 };
 
-export function RecentTransactions() {
-  const { data: categories, isLoading, isError, error } = useCategories(); // Fetch categories using the hook
-  const recentExpenses = mockExpenses.slice(0, 5); // Still using mockExpenses
+interface RecentTransactionsProps {
+  expenses: Expense[];
+}
+
+export function RecentTransactions({ expenses }: RecentTransactionsProps) {
+  const { data: categories, isLoading, isError, error } = useCategories();
+  const recentExpenses = expenses.slice(0, 5);
 
   const getCategoryInfo = (categoryId: string) => {
-    if (isLoading) return { name: "Loading...", icon: "MoreHorizontal", color: "#ccc" };
-    if (isError) return { name: `Error: ${error?.message}`, icon: "MoreHorizontal", color: "#f00" };
     return categories?.find(c => c.id === categoryId) || { name: "Unknown", icon: "MoreHorizontal", color: "#666" };
   };
 
@@ -69,36 +71,42 @@ export function RecentTransactions() {
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y divide-border">
-          {recentExpenses.map((expense, index) => {
-            const category = getCategoryInfo(expense.category);
-            const Icon = iconMap[category.icon || "MoreHorizontal"] || MoreHorizontal; // Fallback for icon
+          {recentExpenses.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              No recent transactions found.
+            </div>
+          ) : (
+            recentExpenses.map((expense, index) => {
+              const category = getCategoryInfo(expense.categoryId);
+              const Icon = iconMap[category.icon || "MoreHorizontal"] || MoreHorizontal;
 
-            return (
-              <div
-                key={expense.id}
-                className={cn(
-                  "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors",
-                  "animate-fade-in"
-                )}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
+              return (
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${category.color}20` }}
+                  key={expense.id}
+                  className={cn(
+                    "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors",
+                    "animate-fade-in"
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <Icon className="w-5 h-5" style={{ color: category.color }} />
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${category.color}20` }}
+                  >
+                    <Icon className="w-5 h-5" style={{ color: category.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground truncate">{expense.description || "No description"}</p>
+                    <p className="text-sm text-muted-foreground">{category.name}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-semibold text-foreground">-₺{expense.amount.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">{formatDate(expense.date)}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{expense.description}</p>
-                  <p className="text-sm text-muted-foreground">{category.name}</p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-semibold text-foreground">-₺{expense.amount.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(expense.date)}</p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </CardContent>
     </Card>

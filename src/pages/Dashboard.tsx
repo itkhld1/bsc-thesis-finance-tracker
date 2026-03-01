@@ -8,47 +8,93 @@ import { AIRecommendations } from "@/components/dashboard/AIRecommendations";
 import { AIFeatureHighlight } from "@/components/ai/AIFeatureHighlight";
 import { AIPredictiveChart } from "@/components/ai/AIPredictiveChart";
 import { AISmartAlerts } from "@/components/ai/AISmartAlerts";
+import { BudgetStatus } from "@/components/dashboard/BudgetStatus";
+import { EditIncomeDialog } from "@/components/dashboard/EditIncomeDialog";
 import { Button } from "@/components/ui/button";
-import { summaryData, mockExpenses } from "@/data/mockData"; // Keep mockExpenses for aggregation
-import { useCategories, Category as API_Category } from "@/hooks/useCategories"; // Import useCategories hook and Category type
-import { Card } from "@/components/ui/card"; // Import Card for loading/error states
-import { Loader2 } from "lucide-react"; // Import Loader2 for loading indicator
-import { useAuth } from "@/context/AuthContext"; // Import useAuth
+import { useCategories } from "@/hooks/useCategories";
+import { useExpenses } from "@/hooks/useExpenses";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-// Define the shape of data expected by CategoryChart
 interface ChartCategoryData {
   name: string;
   value: number;
   color: string;
-  icon?: string; // Optional if not all categories have icons
+  icon?: string;
 }
 
+const DEFAULT_BUDGETS: Record<string, number> = {
+  food: 3000,
+  transport: 1500,
+  shopping: 2000,
+  entertainment: 1000,
+  utilities: 2500,
+  health: 1000,
+  travel: 5000,
+  other: 500
+};
+
 export default function Dashboard() {
-  const { data: categories, isLoading, isError, error } = useCategories(); // Fetch categories
-  const { user } = useAuth(); // Access the authenticated user
+  const { data: categories, isLoading: isCatsLoading } = useCategories();
+  const { data: expenses, isLoading: isExpensesLoading } = useExpenses();
+  const { user } = useAuth();
 
-  // Aggregate spending data if categories and expenses are available
+  const isLoading = isCatsLoading || isExpensesLoading;
+
+  // --- START REAL-TIME CALCULATIONS ---
+  const monthlyIncome = Number(user?.income) || 0; 
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  const currentMonthExpenses = expenses?.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }) || [];
+
+  const monthlyExpensesTotal = currentMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
+
+  const totalExpenses = expenses?.reduce((acc, e) => acc + e.amount, 0) || 0;
+  const totalBalance = monthlyIncome - totalExpenses; 
+  const savingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - monthlyExpensesTotal) / monthlyIncome) * 100) : 0;
+  // --- END REAL-TIME CALCULATIONS ---
+
   const getAggregatedCategoryData = (): ChartCategoryData[] => {
-    if (!categories || categories.length === 0 || mockExpenses.length === 0) {
-      return [];
-    }
-
-    const categoryTotals = mockExpenses.reduce((acc, expense) => {
-      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+    if (!categories || !expenses) return [];
+    const categoryTotals = expenses.reduce((acc, expense) => {
+      acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
       return acc;
     }, {} as Record<string, number>);
-
     return categories
-      .filter(cat => categoryTotals[cat.id]) // Only include categories with spending
+      .filter(cat => categoryTotals[cat.id])
       .map(cat => ({
         name: cat.name,
         value: categoryTotals[cat.id],
-        color: cat.color || "#000", // Provide a default color if missing
+        color: cat.color || "#000",
         icon: cat.icon,
       }));
   };
 
+  const getBudgetStatusData = () => {
+    if (!categories || !expenses) return [];
+    const monthlyCategoryTotals = currentMonthExpenses.reduce((acc, expense) => {
+      acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    return categories
+      .filter(cat => DEFAULT_BUDGETS[cat.id])
+      .map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        allocated: DEFAULT_BUDGETS[cat.id],
+        spent: monthlyCategoryTotals[cat.id] || 0,
+        color: cat.color || "#000"
+      }))
+      .sort((a, b) => (b.spent / b.allocated) - (a.spent / a.allocated));
+  };
+
   const categoryData = getAggregatedCategoryData();
+  const budgetStatusData = getBudgetStatusData();
 
   if (isLoading) {
     return (
@@ -59,16 +105,7 @@ export default function Dashboard() {
     );
   }
 
-  if (isError) {
-    return (
-      <Card className="p-8 text-center text-destructive">
-        <p>Error loading dashboard: {error?.message}</p>
-      </Card>
-    );
-  }
-
   const displayName = user?.name || user?.username || user?.email;
-
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -76,7 +113,11 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Welcome back{displayName ? `, ${displayName}` : ''}! Here's your financial overview.</p>
+          <p className="text-muted-foreground mt-1 ">Welcome back{displayName ? (
+            <>
+              , <span className="font-bold text-foreground">{displayName}</span>
+            </>
+          ) : ''}<span className="font-bold text-foreground">!</span> Here's your financial overview.</p>
         </div>
         <Button asChild className="gradient-primary hover:opacity-90 transition-opacity">
           <Link to="/add-expense">
@@ -90,52 +131,53 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <SummaryCard
           title="Total Balance"
-          value={`₺${summaryData.totalBalance.toLocaleString()}`}
+          value={`₺${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={Wallet}
           variant="primary"
         />
         <SummaryCard
           title="Monthly Income"
-          value={`₺${summaryData.monthlyIncome.toLocaleString()}`}
+          value={`₺${monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={TrendingUp}
-          trend={{ value: 12, isPositive: true }}
+          action={<EditIncomeDialog />}
         />
         <SummaryCard
           title="Monthly Expenses"
-          value={`₺${summaryData.monthlyExpenses.toLocaleString()}`}
+          value={`₺${monthlyExpensesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={TrendingDown}
-          trend={{ value: 8, isPositive: false }}
+          trend={{ value: 0, isPositive: true }}
         />
         <SummaryCard
           title="Savings Rate"
-          value={`${summaryData.savingsRate}%`}
+          value={`${savingsRate}%`}
           icon={PiggyBank}
-          trend={{ value: 5, isPositive: true }}
+          trend={{ value: 0, isPositive: true }}
         />
       </div>
 
-      {/* AI Feature Highlight */}
-      <AIFeatureHighlight />
+      <AIFeatureHighlight expenses={expenses || []} />
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CategoryChart data={categoryData} /> {/* Pass aggregated data to CategoryChart */}
-        <SpendingTrends />
+        <CategoryChart data={categoryData} />
+        <div id="budget-status" className="transition-all duration-500 rounded-xl">
+          <BudgetStatus categories={budgetStatusData} />
+        </div>
       </div>
 
-      {/* AI Predictive Analysis */}
+      <div id="spending-trends" className="transition-all duration-500 rounded-xl">
+        <SpendingTrends expenses={expenses || []} />
+      </div>
+
       <AIPredictiveChart />
 
-      {/* AI Recommendations & Smart Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <AIRecommendations />
+        <div id="ai-recommendations" className="lg:col-span-2 transition-all duration-500 rounded-xl">
+          <AIRecommendations expenses={expenses || []} />
         </div>
-        <AISmartAlerts />
+        <AISmartAlerts expenses={expenses || []} />
       </div>
 
-      {/* Recent Transactions */}
-      <RecentTransactions />
+      <RecentTransactions expenses={expenses || []} />
     </div>
   );
 }

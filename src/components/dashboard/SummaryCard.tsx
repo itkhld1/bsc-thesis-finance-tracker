@@ -11,6 +11,7 @@ interface SummaryCardProps {
     isPositive: boolean;
   };
   variant?: "default" | "primary" | "success" | "warning";
+  action?: React.ReactNode;
 }
 
 const variantStyles = {
@@ -20,7 +21,7 @@ const variantStyles = {
   warning: "bg-warning text-warning-foreground",
 };
 
-export function SummaryCard({ title, value, icon: Icon, trend, variant = "default" }: SummaryCardProps) {
+export function SummaryCard({ title, value, icon: Icon, trend, variant = "default", action }: SummaryCardProps) {
   const isPrimary = variant !== "default";
 
   return (
@@ -31,12 +32,15 @@ export function SummaryCard({ title, value, icon: Icon, trend, variant = "defaul
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
-            <p className={cn(
-              "text-sm font-medium",
-              isPrimary ? "text-current/80" : "text-muted-foreground"
-            )}>
-              {title}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className={cn(
+                "text-sm font-medium",
+                isPrimary ? "text-current/80" : "text-muted-foreground"
+              )}>
+                {title}
+              </p>
+              {action && action}
+            </div>
             <p className="text-2xl lg:text-3xl font-bold tracking-tight">{value}</p>
             {trend && (
               <p className={cn(

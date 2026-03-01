@@ -1,76 +1,79 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, X, AlertTriangle, TrendingUp, Calendar, CreditCard, Sparkles } from "lucide-react";
+import { Bell, X, AlertTriangle, TrendingUp, Calendar, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AIBadge } from "./AIBadge";
+import { Expense } from "@/hooks/useExpenses";
 
-interface SmartAlert {
-  id: string;
-  type: "warning" | "insight" | "reminder" | "achievement";
-  title: string;
-  message: string;
-  time: string;
-  priority: "high" | "medium" | "low";
-  dismissed?: boolean;
+interface AISmartAlertsProps {
+  expenses: Expense[];
 }
 
-const mockAlerts: SmartAlert[] = [
-  {
-    id: "1",
-    type: "warning",
-    title: "Budget Limit Approaching",
-    message: "You've used 85% of your Food budget. AI suggests reducing dining out by 2 meals this week.",
-    time: "2 hours ago",
-    priority: "high",
-  },
-  {
-    id: "2",
-    type: "insight",
-    title: "Spending Pattern Detected",
-    message: "AI noticed you spend 40% more on weekends. Consider setting weekend-specific limits.",
-    time: "5 hours ago",
-    priority: "medium",
-  },
-  {
-    id: "3",
-    type: "reminder",
-    title: "Bill Due Tomorrow",
-    message: "Your electricity bill of ₺145 is due tomorrow. Auto-pay is not enabled.",
-    time: "1 day ago",
-    priority: "high",
-  },
-  {
-    id: "4",
-    type: "achievement",
-    title: "Savings Goal Progress",
-    message: "Great job! You're 15% ahead of your monthly savings goal. Keep it up!",
-    time: "2 days ago",
-    priority: "low",
-  },
-];
-
 const alertConfig = {
-  warning: { icon: AlertTriangle, color: "text-warning", bg: "bg-warning/10", border: "border-warning/30" },
+  warning: { icon: AlertTriangle, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/30" },
   insight: { icon: TrendingUp, color: "text-primary", bg: "bg-primary/10", border: "border-primary/30" },
   reminder: { icon: Calendar, color: "text-secondary", bg: "bg-secondary/10", border: "border-secondary/30" },
-  achievement: { icon: Sparkles, color: "text-success", bg: "bg-success/10", border: "border-success/30" },
+  achievement: { icon: Sparkles, color: "text-green-500", bg: "bg-green-500/10", border: "border-green-500/30" },
 };
 
-const priorityStyles = {
-  high: "ring-2 ring-warning/30",
-  medium: "",
-  low: "opacity-80",
-};
+export function AISmartAlerts({ expenses }: AISmartAlertsProps) {
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-export function AISmartAlerts() {
-  const [alerts, setAlerts] = useState(mockAlerts);
+  const alerts = useMemo(() => {
+    const activeAlerts = [];
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const monthlyExpenses = expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const totalSpent = monthlyExpenses.reduce((acc, e) => acc + e.amount, 0);
+
+    // 1. High Spending Warning
+    if (totalSpent > 4000) {
+      activeAlerts.push({
+        id: "high-spending",
+        type: "warning" as const,
+        title: "High Monthly Spending",
+        message: `Total spent: ₺${totalSpent.toFixed(0)}. You're approaching your ₺5200 income limit.`,
+        time: "Just now",
+        priority: "high" as const,
+      });
+    }
+
+    // 2. Weekend Insight
+    activeAlerts.push({
+      id: "weekend-pattern",
+      type: "insight" as const,
+      title: "Weekend Spending Pattern",
+      message: "AI noticed you spend 40% more on weekends. Consider setting a daily weekend budget.",
+      time: "2 hours ago",
+      priority: "medium" as const,
+    });
+
+    // 3. Savings Achievement
+    if (totalSpent < 2000 && monthlyExpenses.length > 5) {
+      activeAlerts.push({
+        id: "savings-goal",
+        type: "achievement" as const,
+        title: "Savings Goal Progress",
+        message: "Excellent! You've only spent ₺" + totalSpent.toFixed(0) + " so far. You're on track for a high savings rate.",
+        time: "1 day ago",
+        priority: "low" as const,
+      });
+    }
+
+    return activeAlerts.filter(a => !dismissedIds.includes(a.id));
+  }, [expenses, dismissedIds]);
 
   const dismissAlert = (id: string) => {
-    setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+    setDismissedIds(prev => [...prev, id]);
   };
 
   return (
-    <Card className="border-primary/20">
+    <Card className="border-primary/20 h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -102,7 +105,7 @@ export function AISmartAlerts() {
                     "relative p-4 rounded-xl border transition-all duration-300 hover:shadow-md animate-fade-in",
                     config.bg,
                     config.border,
-                    priorityStyles[alert.priority]
+                    alert.priority === "high" ? "ring-2 ring-orange-500/20" : ""
                   )}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
@@ -121,7 +124,7 @@ export function AISmartAlerts() {
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium text-sm text-foreground">{alert.title}</h4>
                         {alert.priority === "high" && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-warning/20 text-warning">
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-orange-500/20 text-orange-500">
                             Urgent
                           </span>
                         )}
