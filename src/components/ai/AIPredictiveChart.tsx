@@ -2,76 +2,78 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { AIBadge } from "./AIBadge";
-import { Brain, TrendingUp, Loader2 } from "lucide-react";
+import { Brain, TrendingUp, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-
-interface HistoryData {
-  month: string;
-  amount: number;
-}
 
 interface ForecastData {
   prediction: number;
   trend: string;
   confidence: number;
   historyCount: number;
+  modelUsed?: string;
 }
 
 export function AIPredictiveChart() {
   const [data, setData] = useState<any[]>([]);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
+      setLoading(true);
       try {
         // 1. Fetch History
         const histRes = await fetch('http://localhost:5001/expenses/history', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const history: HistoryData[] = await histRes.json();
+        if (!histRes.ok) throw new Error("History fetch failed");
+        const history = await histRes.json();
 
         // 2. Fetch Forecast
         const foreRes = await fetch('http://localhost:5001/expenses/forecast', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!foreRes.ok) throw new Error("Forecast fetch failed");
         const foreData: ForecastData = await foreRes.json();
+        
+        console.log("AI Forecast Received:", foreData);
         setForecast(foreData);
 
-        // 3. Combine for Chart
+        // 3. Process Months
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
-        const chartPoints = history.map(h => {
+        const chartPoints = history.map((h: any) => {
           const monthIdx = parseInt(h.month.split('-')[1]) - 1;
           return {
             month: months[monthIdx],
             actual: h.amount,
-            predicted: h.amount, 
-            fullMonth: h.month,
-            confidence: 100 // Historical data is 100% certain
+            predicted: h.amount, // Start prediction line from actual point
+            confidence: 100
           };
         });
 
-        // Add the prediction point
-        if (chartPoints.length > 0) {
-          const lastPoint = chartPoints[chartPoints.length - 1];
-          const lastMonthNum = parseInt(lastPoint.fullMonth.split('-')[1]);
-          const nextMonthIdx = lastMonthNum % 12;
+        // 4. Add Future Prediction (e.g., April)
+        if (chartPoints.length > 0 && foreData.historyCount > 0) {
+          const lastHist = history[history.length - 1];
+          const lastMonthNum = parseInt(lastHist.month.split('-')[1]);
+          const nextMonthName = months[lastMonthNum % 12];
           
           chartPoints.push({
-            month: months[nextMonthIdx],
+            month: nextMonthName,
             actual: null,
-            predicted: foreData.prediction || 0,
-            fullMonth: 'Future',
+            predicted: foreData.prediction,
             confidence: foreData.confidence
-          } as any);
+          });
         }
 
         setData(chartPoints);
-      } catch (error) {
-        console.error("Failed to fetch predictive data", error);
+        setError(null);
+      } catch (err: any) {
+        console.error("AI Chart Error:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -82,8 +84,23 @@ export function AIPredictiveChart() {
 
   if (loading) {
     return (
-      <Card className="border-primary/20 flex items-center justify-center p-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <Card className="border-primary/20 flex items-center justify-center p-12 h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground animate-pulse">AI is training on your data...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (error || data.length === 0) {
+    return (
+      <Card className="border-destructive/20 flex items-center justify-center p-12 h-[400px]">
+        <div className="text-center space-y-2">
+          <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-2" />
+          <p className="text-sm font-medium text-foreground">Forecast Unavailable</p>
+          <p className="text-xs text-muted-foreground">Add more expenses to enable AI predictions.</p>
+        </div>
       </Card>
     );
   }
@@ -93,9 +110,9 @@ export function AIPredictiveChart() {
   return (
     <Card className="border-primary/20 gradient-ai-subtle overflow-hidden">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg gradient-ai">
+            <div className="p-2.5 rounded-xl gradient-ai shadow-lg shadow-primary/20">
               <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
@@ -103,24 +120,25 @@ export function AIPredictiveChart() {
                 Predictive Spending Analysis
                 <AIBadge variant="inline" />
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">AI forecasts based on {forecast?.historyCount || 0} months of data</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider font-medium">
+                AI Forecast based on {forecast?.historyCount || 0} months of behavior
+              </p>
             </div>
           </div>
           {forecast && (
-            <div className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-sm",
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-sm transition-all ${
               forecast.trend === 'decreasing' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-amber-500/10 border-amber-500/20 text-amber-600"
-            )}>
-              <TrendingUp className={cn("w-4 h-4", forecast.trend === 'decreasing' && "rotate-180")} />
-              <span className="text-sm font-semibold">{forecast.confidence}% AI Confidence</span>
+            }`}>
+              <TrendingUp className={`w-4 h-4 ${forecast.trend === 'decreasing' ? "rotate-180" : ""}`} />
+              <span className="text-xs font-bold uppercase tracking-tight">{forecast.confidence}% AI Confidence</span>
             </div>
           )}
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] mt-4">
+        <div className="h-[300px] mt-6">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 35, right: 15, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="actualGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -131,24 +149,25 @@ export function AIPredictiveChart() {
                   <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₺${v}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₺${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "12px",
                   boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                  padding: "12px"
                 }}
                 formatter={(value: number, name: string, props: any) => [
-                  <div key={name} className="flex flex-col gap-1">
-                    <span className="font-bold text-foreground">₺{value?.toLocaleString()}</span>
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <div key={name} className="flex flex-col gap-0.5">
+                    <span className="font-bold text-base text-foreground">₺{value?.toLocaleString()}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       {name === "actual" ? "Actual Spending" : `AI Prediction (${props.payload.confidence}% Conf.)`}
                     </span>
                   </div>,
-                  ""
+                  null
                 ]}
               />
               {lastActualMonth && (
@@ -162,7 +181,7 @@ export function AIPredictiveChart() {
                     fill: "hsl(var(--muted-foreground))", 
                     fontSize: 12,
                     fontWeight: 'bold',
-                    dy: -10
+                    dy: -12
                   }} 
                 />
               )}
@@ -174,28 +193,32 @@ export function AIPredictiveChart() {
                 fill="url(#actualGradient)" 
                 dot={{ fill: "#6366f1", strokeWidth: 2, r: 4 }} 
                 activeDot={{ r: 6, strokeWidth: 0 }}
+                isAnimationActive={true}
               />
               <Area 
                 type="monotone" 
                 dataKey="predicted" 
                 stroke="#f59e0b" 
                 strokeWidth={3} 
-                strokeDasharray="8 5" 
+                strokeDasharray="8 4" 
                 fill="url(#predictedGradient)" 
                 dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }} 
                 activeDot={{ r: 6, strokeWidth: 0 }}
+                isAnimationActive={true}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex items-center justify-center gap-8 mt-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
-            <span className="font-medium text-muted-foreground">Actual Spending</span>
+        
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-10 mt-8">
+          <div className="flex items-center gap-2.5 group">
+            <div className="w-3.5 h-3.5 rounded-full bg-[#6366f1] shadow-sm shadow-indigo-500/40 group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Actual Spending</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-dashed border-[#f59e0b]" />
-            <span className="font-medium text-muted-foreground">AI Prediction</span>
+          <div className="flex items-center gap-2.5 group">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-dashed border-[#f59e0b] bg-amber-500/10 group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Prediction</span>
           </div>
         </div>
       </CardContent>

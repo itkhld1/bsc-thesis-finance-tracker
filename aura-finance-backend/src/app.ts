@@ -244,7 +244,6 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
     .replace(/ç/g, 'c')
     .replace(/\*/g, '');
 
-  // 1. IMPROVED AMOUNT PARSING
   // Strategy A: Look for "TOPLAM", "TUTAR" or "TOTAL" followed by a price format
   // Handles formats like "TOPLAM 756,37" or "TUTAR: 120.00"
   const totalMatch = normalizedText.match(/(toplam|tutar|total|ara toplam|top)\s*[:=]*\s*(\d{1,5}([.,]\d{2})?)/);
@@ -258,7 +257,7 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
     if (priceMatches) {
       const prices = priceMatches
         .map((m: string) => parseFloat(m.replace(',', '.')))
-        .filter(n => n > 0 && n < 30000); // Filter out numbers that are too large (likely barcodes or IDs)
+        .filter(n => n > 0 && n < 30000); // filter out numbers that are too large --> likely barcodes or ids
       
       if (prices.length > 0) {
         amount = Math.max(...prices);
@@ -319,10 +318,13 @@ app.get('/expenses/history', protect, async (req, res) => {
 });
 
 app.get('/expenses/forecast', protect, async (req, res) => {
+  const userId = req.user?.id;
+  console.log(`[Forecast] Request started for User: ${userId}`);
+  
   try {
     const result = await pool.query(
       'SELECT amount, date FROM "Expense" WHERE "userId" = $1 ORDER BY date ASC',
-      [req.user?.id]
+      [userId]
     );
 
     const expenses = result.rows;
@@ -330,8 +332,10 @@ app.get('/expenses/forecast', protect, async (req, res) => {
 
     expenses.forEach(exp => {
       const date = new Date(exp.date);
-      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-      monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
+      if (!isNaN(date.getTime())) {
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
+      }
     }); 
 
     const history = Object.entries(monthlyTotals)
@@ -339,50 +343,54 @@ app.get('/expenses/forecast', protect, async (req, res) => {
       .sort((a, b) => a.month.localeCompare(b.month));
 
     const n = history.length;
-    console.log(`[Forecast] Analyzing ${n} months of data for user ${req.user?.id}`);
+    
+    // Safety check for metadata
+    if (n === 0) {
+      return res.json({ prediction: 0, trend: "stable", confidence: 0, historyCount: 0 });
+    }
 
     if (n < 2) {
       return res.json({ 
-        prediction: n === 1 ? history[0].amount : 0,
+        prediction: history[0].amount,
         trend: "neutral",
-        confidence: 20,
+        confidence: 30,
         historyCount: n,
-        message: "Need more data for accurate AI prediction"
+        message: "Need 2+ months for AI"
       });
     }
 
     const amounts = history.map(h => h.amount);
-    console.log(`[Forecast] Historical amounts:`, amounts);
-    
-    let prediction = await predictWithLSTM(amounts);
-    console.log(`[Forecast] Raw AI Prediction: ${prediction}`);
-    
     const lastAmount = amounts[n-1];
+    let prediction = 0;
+    let usedFallback = false;
 
-    // Intelligent Fallback Logic
-    // If prediction is near 0 or clearly an error, use a growth-aware average
-    if (prediction <= (lastAmount * 0.1) || isNaN(prediction)) {
-      console.log(`[Forecast] AI output unstable, applying growth-aware fallback.`);
-      const trend = (amounts[n-1] - amounts[0]) / (n - 1);
-      prediction = Math.max(lastAmount * 0.5, lastAmount + trend);
+    try {
+      // Attempt LSTM/RNN
+      prediction = await predictWithLSTM(amounts);
+      if (prediction <= (lastAmount * 0.1) || isNaN(prediction)) throw new Error("AI Outlier");
+    } catch (aiError) {
+      // Fallback 1: Linear Regression / Trend Growth
+      usedFallback = true;
+      const firstAmount = amounts[0];
+      const avgGrowthPerMonth = (lastAmount - firstAmount) / (n - 1);
+      prediction = Math.max(lastAmount * 0.7, lastAmount + avgGrowthPerMonth);
+      console.log(`[Forecast] AI failed or gave 0, using Trend Fallback: ₺${prediction}`);
     }
     
     const trend = prediction > lastAmount ? "increasing" : prediction < lastAmount ? "decreasing" : "stable";
-    const confidence = Math.min(95, 45 + (n * 10));
-
-    console.log(`[Forecast] Final Prediction for next month: ₺${prediction.toFixed(2)}`);
+    const confidence = Math.min(95, 40 + (n * 8));
 
     res.json({
       prediction: parseFloat(prediction.toFixed(2)),
       trend,
       confidence,
       historyCount: n,
-      modelUsed: n > 5 ? "LSTM (Deep Learning)" : "SimpleRNN (Small Data Optimized)"
+      modelUsed: usedFallback ? "Trend Regression" : (n > 5 ? "LSTM" : "SimpleRNN")
     });
 
   } catch (error: any) {
-    console.error(`[Forecast Error]`, error);
-    res.status(500).json({ message: 'Error forecasting', details: error.message });
+    console.error(`[Forecast Fatal Error]`, error);
+    res.status(500).json({ message: 'Internal AI Error', historyCount: 0, confidence: 0 });
   }
 });
 

@@ -48,7 +48,7 @@ export function ReceiptUpload() {
     setState("processing");
     
     try {
-      // 1. Perform OCR with Tesseract.js (Turkish + English support)
+      // 1. Perform Tesseract.js turkish + english support
       const result = await Tesseract.recognize(file, 'tur+eng', {
         logger: m => console.log(m)
       });
@@ -56,7 +56,7 @@ export function ReceiptUpload() {
       const rawText = result.data.text;
       console.log("OCR Raw Text:", rawText);
 
-      // 2. Send text to backend for parsing
+      // 2. send text to backend for parsing
       const response = await fetch('http://localhost:5001/expenses/parse-receipt', {
         method: 'POST',
         headers: {
