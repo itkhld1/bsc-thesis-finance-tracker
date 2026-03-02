@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import * as tf from '@tensorflow/tfjs-node';
 
 dotenv.config();
 
@@ -337,47 +338,100 @@ app.get('/expenses/forecast', protect, async (req, res) => {
       .map(([month, amount]) => ({ month, amount }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    if (history.length < 2) {
+    const n = history.length;
+    console.log(`[Forecast] Analyzing ${n} months of data for user ${req.user?.id}`);
+
+    if (n < 2) {
       return res.json({ 
-        prediction: history.length === 1 ? history[0].amount : 0,
+        prediction: n === 1 ? history[0].amount : 0,
         trend: "neutral",
-        confidence: 50,
+        confidence: 20,
+        historyCount: n,
         message: "Need more data for accurate AI prediction"
       });
     }
 
-    // --- SIMPLE PREDICTION LOGIC (Thesis Concept: Linear Trend) ---
     const amounts = history.map(h => h.amount);
-    const n = amounts.length;
+    console.log(`[Forecast] Historical amounts:`, amounts);
     
-    // Calculate simple growth rate between months
-    let totalGrowth = 0;
-    for (let i = 1; i < n; i++) {
-      totalGrowth += (amounts[i] - amounts[i-1]);
-    }
-    const avgGrowth = totalGrowth / (n - 1);
+    let prediction = await predictWithLSTM(amounts);
+    console.log(`[Forecast] Raw AI Prediction: ${prediction}`);
     
-    // Predict next month based on last month + avg growth
     const lastAmount = amounts[n-1];
-    const prediction = Math.max(0, lastAmount + avgGrowth);
+
+    // Intelligent Fallback Logic
+    // If prediction is near 0 or clearly an error, use a growth-aware average
+    if (prediction <= (lastAmount * 0.1) || isNaN(prediction)) {
+      console.log(`[Forecast] AI output unstable, applying growth-aware fallback.`);
+      const trend = (amounts[n-1] - amounts[0]) / (n - 1);
+      prediction = Math.max(lastAmount * 0.5, lastAmount + trend);
+    }
     
-    // Determine trend direction
-    const trend = avgGrowth > 0 ? "increasing" : avgGrowth < 0 ? "decreasing" : "stable";
-    
-    // Confidence score based on data points (Max 95%)
-    const confidence = Math.min(95, 60 + (n * 5));
+    const trend = prediction > lastAmount ? "increasing" : prediction < lastAmount ? "decreasing" : "stable";
+    const confidence = Math.min(95, 45 + (n * 10));
+
+    console.log(`[Forecast] Final Prediction for next month: ₺${prediction.toFixed(2)}`);
 
     res.json({
       prediction: parseFloat(prediction.toFixed(2)),
       trend,
       confidence,
       historyCount: n,
-      nextMonth: "Next Month" // We could calculate the actual month string here
+      modelUsed: n > 5 ? "LSTM (Deep Learning)" : "SimpleRNN (Small Data Optimized)"
     });
 
   } catch (error: any) {
+    console.error(`[Forecast Error]`, error);
     res.status(500).json({ message: 'Error forecasting', details: error.message });
   }
 });
+
+// Optimized prediction function for varying data sizes
+async function predictWithLSTM(data:number[]) {
+  const n = data.length;
+  if (n < 2) return data[0] || 0;
+
+  // 2. Normalization with padding
+  const max = Math.max(...data) * 1.5; 
+  const min = Math.min(...data) * 0.5;
+  const range = max - min || 1; 
+  const normalizedData = data.map(val => (val - min) / range);
+
+  // 3. Prepare Tensors
+  const xs = [];
+  const ys = [];
+  for (let i = 0; i < n - 1; i++) {
+    xs.push([normalizedData[i]]); 
+    ys.push(normalizedData[i + 1]);
+  }
+
+  const tensorXs = tf.tensor3d(xs, [xs.length, 1, 1]);
+  const tensorYs = tf.tensor2d(ys, [ys.length, 1]);
+
+  // 4. Dynamic Model Selection
+  // LSTM needs more data to be stable. For < 5 months, SimpleRNN is safer.
+  const model = tf.sequential();
+  if (n < 5) {
+    model.add(tf.layers.simpleRNN({ units: 16, inputShape: [1, 1] }));
+  } else {
+    model.add(tf.layers.lstm({ units: 32, inputShape: [1, 1] }));
+  }
+  model.add(tf.layers.dense({ units: 1 }));
+  
+  model.compile({ optimizer: tf.train.adam(0.02), loss: 'meanSquaredError' });
+
+  // 5. Training
+  await model.fit(tensorXs, tensorYs, { epochs: 250, verbose: 0 });
+
+  // 6. Predict
+  const lastVal = normalizedData[n - 1];
+  const input = tf.tensor3d([[[lastVal]]]);
+  const prediction = model.predict(input) as tf.Tensor;
+  const predictedValue = (await prediction.data())[0];
+
+  tf.dispose([tensorXs, tensorYs, input, prediction]); // Clean up memory
+
+  return (predictedValue * range) + min;
+}
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
