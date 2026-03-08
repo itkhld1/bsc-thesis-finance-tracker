@@ -74,121 +74,117 @@ export function AIBudgetPredictions() {
   const overallStatus = totalPredicted <= totalBudget ? "on-track" : "at-risk";
 
   return (
-    <Card className="border-primary/20 gradient-ai-subtle">
+    <Card className="border-primary/10 bg-[#f8fafc]/50">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <div className="p-2 rounded-lg gradient-ai ai-pulse">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-            AI Budget Predictions
-            <AIBadge variant="inline" />
-          </CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-800">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <TrendingUp className="w-5 h-5 text-primary" />
+              </div>
+              Budget Predictions
+            </CardTitle>
+            <p className="text-sm text-slate-500">
+              System predicts your month-end spending based on current patterns
+            </p>
+          </div>
           <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded-lg",
-            overallStatus === "on-track" ? "bg-success/10 border border-success/30" : "bg-warning/10 border border-warning/30"
+            "flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all duration-500",
+            overallStatus === "on-track" 
+              ? "bg-emerald-50 border-emerald-200 text-emerald-700" 
+              : "bg-orange-50 border-orange-200 text-orange-700 animate-pulse-subtle"
           )}>
             {overallStatus === "on-track" ? (
-              <TrendingDown className="w-4 h-4 text-success" />
+              <Shield className="w-4 h-4" />
             ) : (
-              <TrendingUp className="w-4 h-4 text-warning" />
+              <TrendingUp className="w-4 h-4" />
             )}
-            <span className={cn("text-sm font-medium", overallStatus === "on-track" ? "text-success" : "text-warning")}>
+            <span className="text-xs font-bold uppercase tracking-wider">
               {overallStatus === "on-track" ? "On Track" : "Attention Needed"}
             </span>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          AI predicts your month-end spending based on current patterns
-        </p>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {predictions.map((prediction, index) => {
             const risk = riskStyles[prediction.riskLevel];
             const RiskIcon = risk.icon;
             const percentOfBudget = Math.round((prediction.predictedSpend / prediction.budgetLimit) * 100);
+            const isHighRisk = prediction.riskLevel === 'high' || percentOfBudget > 100;
 
             return (
               <div
                 key={prediction.category}
                 className={cn(
-                  "p-4 rounded-xl border transition-all duration-300 hover:shadow-md animate-fade-in",
-                  risk.bg,
-                  risk.border
+                  "p-5 rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:shadow-md animate-fade-in group",
+                  isHighRisk ? "border-red-100" : "border-slate-100"
                 )}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-medium text-sm text-foreground">{prediction.category}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <RiskIcon className={cn("w-3.5 h-3.5", risk.text)} />
-                      <span className={cn("text-xs font-medium capitalize", risk.text)}>
-                        {prediction.riskLevel} risk
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-base text-slate-800">{prediction.category}</h4>
+                    <div className="flex items-center gap-1.5">
+                      <RiskIcon className={cn("w-3.5 h-3.5", isHighRisk ? "text-red-500" : "text-emerald-500")} />
+                      <span className={cn("text-[11px] font-bold uppercase tracking-tight", isHighRisk ? "text-red-500" : "text-emerald-500")}>
+                        {isHighRisk ? "High Risk" : "Stable"}
                       </span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">₺{prediction.predictedSpend.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">of ₺{prediction.budgetLimit.toLocaleString()}</p>
+                    <p className="text-xl font-black text-slate-900">₺{prediction.predictedSpend.toLocaleString()}</p>
+                    <p className="text-xs font-medium text-slate-400">of ₺{prediction.budgetLimit.toLocaleString()}</p>
                   </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="relative h-2 bg-background/50 rounded-full overflow-hidden mb-3">
+                {/* Progress Bar - Red if High Risk */}
+                <div className="relative h-2.5 bg-slate-100 rounded-full overflow-hidden mb-4">
                   <div
-                    className={cn("h-full rounded-full transition-all duration-700", {
-                      "bg-success": percentOfBudget <= 80,
-                      "bg-warning": percentOfBudget > 80 && percentOfBudget <= 100,
-                      "bg-destructive": percentOfBudget > 100,
-                    })}
+                    className={cn("h-full rounded-full transition-all duration-1000 ease-out", 
+                      isHighRisk ? "bg-red-500" : "bg-emerald-500"
+                    )}
                     style={{ width: `${Math.min(percentOfBudget, 100)}%` }}
                   />
-                  {percentOfBudget > 100 && (
-                    <div
-                      className="absolute top-0 right-0 h-full bg-destructive/50 animate-pulse"
-                      style={{ width: `${Math.min(percentOfBudget - 100, 20)}%` }}
-                    />
-                  )}
                 </div>
 
                 {/* Confidence & Suggestion */}
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-muted-foreground">AI Confidence</span>
-                  <span className="font-medium text-foreground">{prediction.confidence}%</span>
+                <div className="flex items-center justify-between text-[11px] mb-3">
+                  <span className="font-medium text-slate-400 uppercase tracking-wider">Confidence</span>
+                  <span className="font-bold text-slate-600">{prediction.confidence}%</span>
                 </div>
 
-                <div className="pt-2 border-t border-border/30">
-                  <p className="text-xs text-muted-foreground">
-                    <span className="text-primary font-medium">💡 Suggestion:</span> {prediction.suggestion}
-                  </p>
+                <div className="pt-3 border-t border-slate-50">
+                  <div className="flex gap-2 items-start">
+                    <span className="text-sm">💡</span>
+                    <p className="text-xs text-slate-500 leading-relaxed italic">
+                      <span className="font-bold text-emerald-600 not-italic">Suggestion:</span> {prediction.suggestion}
+                    </p>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Summary */}
-        <div className="mt-6 p-4 rounded-xl bg-background/60 border border-border/50">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Wallet className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Predicted Total Spending</p>
-                <p className="text-xs text-muted-foreground">Based on your current patterns</p>
-              </div>
+        {/* Summary Footer from Image */}
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-emerald-50">
+              <Wallet className="w-6 h-6 text-emerald-600" />
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-foreground">₺{totalPredicted.toLocaleString()}</p>
-              <p className={cn("text-sm font-medium", totalPredicted <= totalBudget ? "text-success" : "text-warning")}>
-                {totalPredicted <= totalBudget
-                  ? `₺${(totalBudget - totalPredicted).toLocaleString()} under budget`
-                  : `₺${(totalPredicted - totalBudget).toLocaleString()} over budget`}
-              </p>
+            <div>
+              <p className="text-base font-bold text-slate-800">Predicted Total Spending</p>
+              <p className="text-xs font-medium text-slate-400">Based on your current patterns</p>
             </div>
+          </div>
+          <div className="text-right">
+            <p className="text-3xl font-black text-slate-900">₺{totalPredicted.toLocaleString()}</p>
+            <p className={cn("text-sm font-bold", totalPredicted <= totalBudget ? "text-emerald-600" : "text-orange-500")}>
+              {totalPredicted <= totalBudget
+                ? `₺${(totalBudget - totalPredicted).toLocaleString()} under budget`
+                : `₺${(totalPredicted - totalBudget).toLocaleString()} over budget`}
+            </p>
           </div>
         </div>
       </CardContent>

@@ -45,28 +45,36 @@ export function AIPredictiveChart() {
         // 3. Process Months
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
-        const chartPoints = history.map((h: any) => {
-          const monthIdx = (parseInt(h.month.split('-')[1]) - 1) % 12;
+        let chartPoints = history.map((h: any) => {
           return {
-            month: months[monthIdx],
-            actual: h.amount,
-            predicted: h.amount, 
+            month: h.month, // Backend already returns "Feb", "Mar" etc.
+            actual: Number(h.spent),
+            predicted: Number(h.spent), 
             confidence: 100
           };
         });
 
         // 4. Add Future Prediction
         if (chartPoints.length > 0 && foreData.historyCount > 0) {
-          const lastHist = history[history.length - 1];
-          const lastMonthNum = parseInt(lastHist.month.split('-')[1]);
-          const nextMonthName = months[lastMonthNum % 12];
+          const lastPoint = chartPoints[chartPoints.length - 1];
+          const lastMonthIdx = months.indexOf(lastPoint.month);
+          const nextMonthName = months[(lastMonthIdx + 1) % 12];
           
           chartPoints.push({
             month: nextMonthName,
             actual: null,
-            predicted: foreData.prediction,
+            predicted: Number(foreData.prediction),
             confidence: foreData.confidence
           });
+        }
+
+        // Recharts requires at least 2 points to draw a line. 
+        // If we only have 1 point, duplicate it with a minor offset for visibility.
+        if (chartPoints.length === 1) {
+          chartPoints = [
+            { ...chartPoints[0], month: "Start" },
+            chartPoints[0]
+          ];
         }
 
         setData(chartPoints);
@@ -141,15 +149,15 @@ export function AIPredictiveChart() {
             <AreaChart data={data} margin={{ top: 35, right: 15, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="actualGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="predictedGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#d97706" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₺${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} />
               <Tooltip
@@ -188,23 +196,27 @@ export function AIPredictiveChart() {
               <Area 
                 type="monotone" 
                 dataKey="actual" 
-                stroke="#6366f1" 
-                strokeWidth={3} 
+                stroke="#2563eb" 
+                strokeWidth={4} 
+                strokeOpacity={1}
                 fill="url(#actualGradient)" 
-                dot={{ fill: "#6366f1", strokeWidth: 2, r: 4 }} 
-                activeDot={{ r: 6, strokeWidth: 0 }}
+                dot={{ fill: "#2563eb", strokeWidth: 2, r: 5, stroke: '#fff' }} 
+                activeDot={{ r: 7, strokeWidth: 0 }}
                 isAnimationActive={true}
+                connectNulls={true}
               />
               <Area 
                 type="monotone" 
                 dataKey="predicted" 
-                stroke="#f59e0b" 
-                strokeWidth={3} 
+                stroke="#d97706" 
+                strokeWidth={4} 
+                strokeOpacity={1}
                 strokeDasharray="8 4" 
                 fill="url(#predictedGradient)" 
-                dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }} 
-                activeDot={{ r: 6, strokeWidth: 0 }}
+                dot={{ fill: "#d97706", strokeWidth: 2, r: 5, stroke: '#fff' }} 
+                activeDot={{ r: 7, strokeWidth: 0 }}
                 isAnimationActive={true}
+                connectNulls={true}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -213,19 +225,15 @@ export function AIPredictiveChart() {
         {/* Legend */}
         <div className="flex items-center justify-center gap-10 mt-8">
           <div className="flex items-center gap-2.5 group">
-            <div className="w-3.5 h-3.5 rounded-full bg-[#6366f1] shadow-sm shadow-indigo-500/40 group-hover:scale-110 transition-transform" />
+            <div className="w-3.5 h-3.5 rounded-full bg-[#2563eb] shadow-sm shadow-blue-500/40 group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Actual Spending</span>
           </div>
           <div className="flex items-center gap-2.5 group">
-            <div className="w-3.5 h-3.5 rounded-full border-2 border-dashed border-[#f59e0b] bg-amber-500/10 group-hover:scale-110 transition-transform" />
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-dashed border-[#d97706] bg-amber-600/10 group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Prediction</span>
           </div>
         </div>
       </CardContent>
     </Card>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }

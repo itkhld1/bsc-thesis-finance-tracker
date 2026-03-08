@@ -14,11 +14,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       <main
         className={cn(
-          "min-h-screen transition-all duration-300",
-          collapsed ? "ml-16" : "ml-64"
+          "min-h-screen transition-all duration-500 ease-in-out bg-slate-50/30",
+          collapsed ? "ml-[80px]" : "ml-[280px]"
         )}
       >
-        <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="p-6 lg:p-10 max-w-[1600px] mx-auto animate-fade-in">
           {children}
         </div>
       </main>

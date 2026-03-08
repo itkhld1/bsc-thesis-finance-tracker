@@ -624,28 +624,40 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
 
 app.get('/expenses/history', protect, async (req, res) => {
   try {
-    // 1. fetch all expenses for the user
+    const userId = req.user?.id;
+    // 1. Fetch all expenses for the user
     const result = await pool.query(
       'SELECT amount, date FROM "Expense" WHERE "userId" = $1 ORDER BY date ASC',
-      [req.user?.id]
+      [userId]
     );
+
+    // 2. Fetch current total budget to use as a baseline for all months
+    const budgetResult = await pool.query('SELECT SUM("limitAmount") as "totalBudget" FROM "Budget" WHERE "userId" = $1', [userId]);
+    const currentTotalBudget = Number(budgetResult.rows[0]?.totalBudget) || 10500; // Default fallback
 
     const expenses = result.rows;
 
-    // 2. create a map to store montly totals
+    // 3. Create a map to store monthly totals
     const monthlyTotals: Record<string, number> = {};
 
     expenses.forEach(exp => {
       const date = new Date(exp.date);
-      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-
-      monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
+      if (!isNaN(date.getTime())) {
+        // Use short month name format "Jul", "Aug" etc
+        const monthName = date.toLocaleString('default', { month: 'short' });
+        monthlyTotals[monthName] = (monthlyTotals[monthName] || 0) + Number(exp.amount);
+      }
     }); 
 
-    // 3. Convert map to a sorted array of objects
+    // 4. Convert map to a sorted array of objects (using last 6 months logic for the chart)
+    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const history = Object.entries(monthlyTotals)
-      .map(([month, amount]) => ({ month, amount }))
-      .sort((a, b) => a.month.localeCompare(b.month));
+      .map(([month, amount]) => ({ 
+        month, 
+        spent: amount,
+        budget: currentTotalBudget
+      }))
+      .sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
 
     res.json(history);
   } catch (error: any) {
