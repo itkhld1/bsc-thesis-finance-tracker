@@ -1,4 +1,4 @@
-import { Wallet, TrendingUp, TrendingDown, PiggyBank, Plus } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, PiggyBank, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { CategoryChart } from "@/components/dashboard/CategoryChart";
@@ -11,10 +11,18 @@ import { AISmartAlerts } from "@/components/ai/AISmartAlerts";
 import { BudgetStatus } from "@/components/dashboard/BudgetStatus";
 import { EditIncomeDialog } from "@/components/dashboard/EditIncomeDialog";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCategories } from "@/hooks/useCategories";
 import { useExpenses } from "@/hooks/useExpenses";
+import { useBudget } from "@/hooks/useBudget";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
+
+const months = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
 interface ChartCategoryData {
   name: string;
@@ -37,19 +45,21 @@ const DEFAULT_BUDGETS: Record<string, number> = {
 export default function Dashboard() {
   const { data: categories, isLoading: isCatsLoading } = useCategories();
   const { data: expenses, isLoading: isExpensesLoading } = useExpenses();
+  const { data: budgetLimits, isLoading: isBudgetLoading } = useBudget();
   const { user } = useAuth();
 
-  const isLoading = isCatsLoading || isExpensesLoading;
+  const [selectedMonth, setSelectedMonth] = useState(months[new Date().getMonth()]);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const isLoading = isCatsLoading || isExpensesLoading || isBudgetLoading;
 
   // --- START REAL-TIME CALCULATIONS ---
   const monthlyIncome = Number(user?.income) || 0; 
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const monthIdx = months.indexOf(selectedMonth);
   
   const currentMonthExpenses = expenses?.filter(e => {
     const d = new Date(e.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    return d.getMonth() === monthIdx && d.getFullYear() === selectedYear;
   }) || [];
 
   const monthlyExpensesTotal = currentMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
@@ -77,19 +87,27 @@ export default function Dashboard() {
 
   const getBudgetStatusData = () => {
     if (!categories || !expenses) return [];
+    
+    // Map current limits from DB, fallback to DEFAULT_BUDGETS if not set
+    const currentLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
+    budgetLimits?.forEach(limit => {
+      currentLimits[limit.categoryId] = Number(limit.limitAmount);
+    });
+
     const monthlyCategoryTotals = currentMonthExpenses.reduce((acc, expense) => {
       acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
       return acc;
     }, {} as Record<string, number>);
+
     return categories
-      .filter(cat => DEFAULT_BUDGETS[cat.id])
       .map(cat => ({
         id: cat.id,
         name: cat.name,
-        allocated: DEFAULT_BUDGETS[cat.id],
+        allocated: currentLimits[cat.id] || 0,
         spent: monthlyCategoryTotals[cat.id] || 0,
         color: cat.color || "#000"
       }))
+      .filter(cat => cat.allocated > 0) // Only show categories that have a budget
       .sort((a, b) => (b.spent / b.allocated) - (a.spent / a.allocated));
   };
 
@@ -119,12 +137,37 @@ export default function Dashboard() {
             </>
           ) : ''}<span className="font-bold text-foreground">!</span> Here's your financial overview.</p>
         </div>
-        <Button asChild className="gradient-primary hover:opacity-90 transition-opacity">
-          <Link to="/add-expense">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Expense
-          </Link>
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mr-2">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map(month => (
+                  <SelectItem key={month} value={month}>{month}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[2024, 2025, 2026].map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button asChild className="gradient-primary hover:opacity-90 transition-opacity">
+            <Link to="/add-expense">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Expense
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
