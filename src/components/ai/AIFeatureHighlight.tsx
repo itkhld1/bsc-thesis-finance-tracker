@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, TrendingUp, AlertTriangle, PiggyBank, Tags, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Expense } from "@/hooks/useExpenses";
+import { useBudget } from "@/hooks/useBudget";
 
 interface AIFeatureHighlightProps {
   expenses: Expense[];
@@ -13,6 +14,7 @@ const DEFAULT_BUDGETS: Record<string, number> = {
 };
 
 export function AIFeatureHighlight({ expenses }: AIFeatureHighlightProps) {
+  const { data: budgetLimits } = useBudget();
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   
@@ -29,8 +31,14 @@ export function AIFeatureHighlight({ expenses }: AIFeatureHighlightProps) {
     return acc;
   }, {} as Record<string, number>);
 
+  // Map current limits from DB, fallback to DEFAULT_BUDGETS if not set
+  const currentLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
+  budgetLimits?.forEach(limit => {
+    currentLimits[limit.categoryId] = Number(limit.limitAmount);
+  });
+
   const activeWarnings = Object.entries(categoryTotals).filter(([id, total]) => {
-    return total > (DEFAULT_BUDGETS[id] || 0) * 0.8;
+    return total > (currentLimits[id] || 0) * 0.8;
   }).length;
 
   const totalSpent = monthlyExpenses.reduce((acc, e) => acc + e.amount, 0);

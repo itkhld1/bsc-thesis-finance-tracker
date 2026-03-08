@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Sparkles, Target, Zap, Shield, Wallet } from "lucide-react";
+import { TrendingUp, TrendingDown, Sparkles, Target, Zap, Shield, Wallet, Loader2, AlertCircle } from "lucide-react";
 import { AIBadge } from "./AIBadge";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 interface BudgetPrediction {
   category: string;
@@ -12,41 +14,6 @@ interface BudgetPrediction {
   suggestion: string;
 }
 
-const predictions: BudgetPrediction[] = [
-  {
-    category: "Food & Dining",
-    predictedSpend: 720,
-    budgetLimit: 600,
-    confidence: 87,
-    riskLevel: "high",
-    suggestion: "Reduce dining out by 3 meals to stay on budget",
-  },
-  {
-    category: "Transportation",
-    predictedSpend: 230,
-    budgetLimit: 300,
-    confidence: 92,
-    riskLevel: "low",
-    suggestion: "You're on track. Consider saving the difference!",
-  },
-  {
-    category: "Entertainment",
-    predictedSpend: 195,
-    budgetLimit: 200,
-    confidence: 78,
-    riskLevel: "medium",
-    suggestion: "Close to limit. Skip one streaming service this month?",
-  },
-  {
-    category: "Shopping",
-    predictedSpend: 280,
-    budgetLimit: 350,
-    confidence: 85,
-    riskLevel: "low",
-    suggestion: "Great control! You could add $70 to savings",
-  },
-];
-
 const riskStyles = {
   low: { bg: "bg-success/10", border: "border-success/30", text: "text-success", icon: Shield },
   medium: { bg: "bg-warning/10", border: "border-warning/30", text: "text-warning", icon: Target },
@@ -54,6 +21,54 @@ const riskStyles = {
 };
 
 export function AIBudgetPredictions() {
+  const [predictions, setPredictions] = useState<BudgetPrediction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    const fetchPredictions = async () => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const res = await fetch('http://localhost:5001/ai/budget-predictions', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Failed to fetch AI budget predictions");
+        const data = await res.json();
+        setPredictions(data);
+        setError(null);
+      } catch (err: any) {
+        console.error("AI Budget Predictions Error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPredictions();
+  }, [token]);
+
+  if (loading) {
+    return (
+      <Card className="border-primary/20 gradient-ai-subtle h-[200px] flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+        <p className="text-xs text-muted-foreground animate-pulse font-medium">
+          Predicting your month-end financial status...
+        </p>
+      </Card>
+    );
+  }
+
+  if (error || predictions.length === 0) {
+    return (
+      <Card className="border-destructive/20 h-[200px] flex flex-col items-center justify-center p-6 text-center">
+        <AlertCircle className="w-8 h-8 text-destructive mb-2" />
+        <p className="text-xs text-muted-foreground">Budget forecasts currently unavailable.</p>
+      </Card>
+    );
+  }
+
   const totalPredicted = predictions.reduce((sum, p) => sum + p.predictedSpend, 0);
   const totalBudget = predictions.reduce((sum, p) => sum + p.budgetLimit, 0);
   const overallStatus = totalPredicted <= totalBudget ? "on-track" : "at-risk";
@@ -115,8 +130,8 @@ export function AIBudgetPredictions() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">₺{prediction.predictedSpend}</p>
-                    <p className="text-xs text-muted-foreground">of ₺{prediction.budgetLimit}</p>
+                    <p className="text-lg font-bold text-foreground">₺{prediction.predictedSpend.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">of ₺{prediction.budgetLimit.toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -170,8 +185,8 @@ export function AIBudgetPredictions() {
               <p className="text-2xl font-bold text-foreground">₺{totalPredicted.toLocaleString()}</p>
               <p className={cn("text-sm font-medium", totalPredicted <= totalBudget ? "text-success" : "text-warning")}>
                 {totalPredicted <= totalBudget
-                  ? `₺${totalBudget - totalPredicted} under budget`
-                  : `₺${totalPredicted - totalBudget} over budget`}
+                  ? `₺${(totalBudget - totalPredicted).toLocaleString()} under budget`
+                  : `₺${(totalPredicted - totalBudget).toLocaleString()} over budget`}
               </p>
             </div>
           </div>

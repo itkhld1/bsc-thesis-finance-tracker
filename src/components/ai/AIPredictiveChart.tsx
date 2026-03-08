@@ -46,16 +46,16 @@ export function AIPredictiveChart() {
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
         const chartPoints = history.map((h: any) => {
-          const monthIdx = parseInt(h.month.split('-')[1]) - 1;
+          const monthIdx = (parseInt(h.month.split('-')[1]) - 1) % 12;
           return {
             month: months[monthIdx],
             actual: h.amount,
-            predicted: h.amount, // Start prediction line from actual point
+            predicted: h.amount, 
             confidence: 100
           };
         });
 
-        // 4. Add Future Prediction (e.g., April)
+        // 4. Add Future Prediction
         if (chartPoints.length > 0 && foreData.historyCount > 0) {
           const lastHist = history[history.length - 1];
           const lastMonthNum = parseInt(lastHist.month.split('-')[1]);
@@ -160,7 +160,7 @@ export function AIPredictiveChart() {
                   boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
                   padding: "12px"
                 }}
-                formatter={(value: number, name: string, props: any) => [
+                formatter={(value: any, name: string, props: any) => [
                   <div key={name} className="flex flex-col gap-0.5">
                     <span className="font-bold text-base text-foreground">₺{value?.toLocaleString()}</span>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

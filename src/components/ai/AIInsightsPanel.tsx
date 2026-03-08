@@ -1,57 +1,72 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AIBadge } from "./AIBadge";
 import { AIInsightCard } from "./AIInsightCard";
-import { Brain, Sparkles, Activity, BarChart3 } from "lucide-react";
+import { Brain, Sparkles, Activity, BarChart3, Loader2, AlertCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-const insights = [
-  {
-    type: "prediction" as const,
-    title: "End-of-Month Forecast",
-    description: "Based on spending velocity, you'll have $1,240 remaining by month end.",
-    value: "$1,240",
-    confidence: 89,
-    trend: { value: 8, isPositive: true },
-  },
-  {
-    type: "warning" as const,
-    title: "Unusual Activity Detected",
-    description: "3 transactions from new merchants in the last 24 hours. Verify these purchases.",
-    confidence: 76,
-    actionLabel: "Review Now",
-  },
-  {
-    type: "tip" as const,
-    title: "Subscription Optimization",
-    description: "You have 3 overlapping streaming services. Consolidating could save $25/month.",
-    value: "$25/mo",
-    confidence: 94,
-    actionLabel: "View Subscriptions",
-  },
-  {
-    type: "achievement" as const,
-    title: "Spending Streak!",
-    description: "You've stayed under budget for 12 consecutive days. Your longest streak!",
-    trend: { value: 12, isPositive: true },
-    confidence: 100,
-  },
-  {
-    type: "trend" as const,
-    title: "Category Shift Detected",
-    description: "Your grocery spending decreased 15% while dining out increased 22%.",
-    confidence: 91,
-    actionLabel: "See Details",
-  },
-  {
-    type: "action" as const,
-    title: "Smart Savings Opportunity",
-    description: "Moving $200 to savings now would put you on track for your vacation goal.",
-    value: "$200",
-    confidence: 85,
-    actionLabel: "Transfer Now",
-  },
-];
+interface Insight {
+  type: "prediction" | "warning" | "tip" | "achievement" | "trend" | "action";
+  title: string;
+  description: string;
+  value?: string;
+  confidence: number;
+  trend?: { value: number; isPositive: boolean };
+  actionLabel?: string;
+}
 
 export function AIInsightsPanel() {
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const res = await fetch('http://localhost:5001/ai/insights', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Failed to fetch AI insights");
+        const data = await res.json();
+        setInsights(data);
+        setError(null);
+      } catch (err: any) {
+        console.error("AI Insights Error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInsights();
+  }, [token]);
+
+  if (loading) {
+    return (
+      <Card className="border-primary/20 gradient-ai-subtle h-[300px] flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+        <p className="text-sm text-muted-foreground animate-pulse font-medium">
+          Our AI is analyzing your financial patterns...
+        </p>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-destructive/20 h-[300px] flex flex-col items-center justify-center p-6 text-center">
+        <AlertCircle className="w-10 h-10 text-destructive mb-3" />
+        <h3 className="font-semibold text-foreground">Insights Unavailable</h3>
+        <p className="text-xs text-muted-foreground mt-2 max-w-[300px]">
+          We couldn't reach the AI analysis engine. Please check your connection or try again later.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-primary/20 gradient-ai-subtle overflow-hidden">
       <CardHeader className="pb-3">
@@ -78,22 +93,29 @@ export function AIInsightsPanel() {
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50">
               <BarChart3 className="w-4 h-4 text-primary" />
-              <span className="text-xs font-medium text-muted-foreground">6 insights</span>
+              <span className="text-xs font-medium text-muted-foreground">{insights.length} insights</span>
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {insights.map((insight, index) => (
-            <AIInsightCard
-              key={index}
-              {...insight}
-              className="animate-fade-in"
-              onAction={insight.actionLabel ? () => console.log("Action:", insight.title) : undefined}
-            />
-          ))}
-        </div>
+        {insights.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-20" />
+            <p className="text-sm font-medium">Add more transactions to generate deeper AI insights.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {insights.map((insight, index) => (
+              <AIInsightCard
+                key={index}
+                {...insight}
+                className="animate-fade-in"
+                onAction={insight.actionLabel ? () => console.log("Action:", insight.title) : undefined}
+              />
+            ))}
+          </div>
+        )}
 
         {/* AI Status Footer */}
         <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between flex-wrap gap-4">
@@ -104,12 +126,12 @@ export function AIInsightsPanel() {
               <div className="w-2 h-2 rounded-full bg-success animate-pulse" style={{ animationDelay: "300ms" }} />
             </div>
             <span className="text-xs text-muted-foreground">
-              AI models processing 847 transactions from the last 30 days
+              Deep Neural Network model active and processing
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground">Last updated 2 minutes ago</span>
+            <span className="text-xs text-muted-foreground">Last updated just now</span>
           </div>
         </div>
       </CardContent>

@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import * as tf from '@tensorflow/tfjs-node';
+import { exec } from 'child_process';
+import path from 'path';
 
 dotenv.config();
 
@@ -46,11 +48,20 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 pool.connect()
   .then(async client => {
     console.log('Connected to PostgreSQL database!');
-    // Ensure income column exists
+    // Ensure tables exist
     try {
       await client.query('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS income DECIMAL(10,2) DEFAULT 0');
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS "Budget" (
+          id UUID PRIMARY KEY,
+          "userId" INTEGER REFERENCES "User"(id),
+          "categoryId" TEXT NOT NULL,
+          "limitAmount" DECIMAL(10,2) NOT NULL,
+          UNIQUE("userId", "categoryId")
+        )
+      `);
     } catch (e) {
-      console.log('Income column already exists or error adding it');
+      console.log('Database migration log:', e.message);
     }
     client.release();
   })
@@ -72,12 +83,47 @@ const protect = (req: Request, res: Response, next: NextFunction) => {
   return res.status(401).json({ message: 'Not authorized, no token' });
 };
 
+// BUDGET ENDPOINTS
+app.get('/budget', protect, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT "categoryId", "limitAmount" FROM "Budget" WHERE "userId" = $1', [req.user?.id]);
+    res.json(result.rows);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching budget' });
+  }
+});
+
+app.post('/budget', protect, async (req, res) => {
+  const { budgets } = req.body; // Array of { categoryId, limitAmount }
+  try {
+    for (const b of budgets) {
+      await pool.query(
+        'INSERT INTO "Budget" (id, "userId", "categoryId", "limitAmount") VALUES ($1, $2, $3, $4) ON CONFLICT ("userId", "categoryId") DO UPDATE SET "limitAmount" = EXCLUDED."limitAmount"',
+        [uuidv4(), req.user?.id, b.categoryId, b.limitAmount]
+      );
+    }
+    res.json({ message: "Budget updated successfully" });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error saving budget', details: error.message });
+  }
+});
+
 // --- ROUTES ---
 
 app.get('/', (req, res) => res.send('Aura Finance Backend is running!'));
 
 // PING TEST - To verify the server updated
 app.get('/ping', (req, res) => res.json({ message: 'pong', version: '1.1', timestamp: new Date() }));
+
+app.get('/debug/routes', (req, res) => {
+  const routes: any[] = [];
+  app._router.stack.forEach((middleware: any) => {
+    if (middleware.route) {
+      routes.push(`${Object.keys(middleware.route.methods)} ${middleware.route.path}`);
+    }
+  });
+  res.json(routes);
+});
 
 // USER INFO
 app.get('/auth/me', protect, async (req, res) => {
@@ -149,6 +195,296 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // EXPENSES (CRUD)
+app.get('/ai/insights', protect, async (req, res) => {
+  const userId = req.user?.id;
+  console.log(`[AI Insights] Request started for User: ${userId}`);
+  try {
+    // 1. Fetch Expenses & User Income
+    const expResult = await pool.query(
+      'SELECT amount, "categoryId", description, date FROM "Expense" WHERE "userId" = $1 ORDER BY date DESC',
+      [userId]
+    );
+    console.log(`[AI Insights] Fetched ${expResult.rows.length} expenses`);
+    const userResult = await pool.query('SELECT income FROM "User" WHERE id = $1', [userId]);
+    console.log(`[AI Insights] Fetched user income: ${userResult.rows[0]?.income}`);
+    
+    const expenses = expResult.rows || [];
+    const income = Number(userResult.rows[0]?.income) || 0;
+    
+    if (expenses.length === 0) {
+      console.log(`[AI Insights] No expenses found for user ${userId}, returning tip`);
+      return res.json([
+        {
+          type: "tip",
+          title: "Get Started",
+          description: "Add your first few expenses to unlock personalized AI insights and spending analysis.",
+          confidence: 100,
+          actionLabel: "Add Expense"
+        }
+      ]);
+    }
+
+    const insights = [];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // 2. ANALYZE: Monthly Totals
+    const currentMonthExpenses = expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+    const currentTotal = currentMonthExpenses.reduce((acc, e) => acc + Number(e.amount), 0);
+
+    // 3. INSIGHT: Spending Velocity / Forecast
+    if (currentMonthExpenses.length > 5) {
+      const dayOfMonth = now.getDate();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const projectedTotal = (currentTotal / dayOfMonth) * daysInMonth;
+      const remaining = income - projectedTotal;
+
+      if (remaining > 0) {
+        insights.push({
+          type: "prediction",
+          title: "End-of-Month Forecast",
+          description: `Based on your spending velocity, you're on track to have ₺${remaining.toFixed(0)} remaining by month end.`,
+          value: `₺${remaining.toFixed(0)}`,
+          confidence: 85,
+          trend: { value: Math.round((remaining / income) * 100), isPositive: true }
+        });
+      } else if (income > 0) {
+        insights.push({
+          type: "warning",
+          title: "Over-Budget Prediction",
+          description: `You are on pace to exceed your income by ₺${Math.abs(remaining).toFixed(0)}. Consider reducing non-essential spending.`,
+          value: `₺${Math.abs(remaining).toFixed(0)}`,
+          confidence: 92,
+          actionLabel: "View Budget"
+        });
+      }
+    }
+
+    // 4. ANALYZE: Category Shifts (Current vs Last Month)
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const lastMonthExpenses = expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    });
+
+    const getCategoryTotals = (exps: any[]) => exps.reduce((acc, e) => {
+      acc[e.categoryId] = (acc[e.categoryId] || 0) + Number(e.amount);
+      return acc;
+    }, {} as Record<string, number>);
+
+    const currentCatTotals = getCategoryTotals(currentMonthExpenses);
+    const lastCatTotals = getCategoryTotals(lastMonthExpenses);
+
+    for (const [catId, currentAmtValue] of Object.entries(currentCatTotals)) {
+      const currentAmt = currentAmtValue as number;
+      const lastAmt = lastCatTotals[catId] || 0;
+      if (lastAmt > 0) {
+        const percentChange = ((currentAmt - lastAmt) / lastAmt) * 100;
+        if (Math.abs(percentChange) > 20) {
+          insights.push({
+            type: "trend",
+            title: `${catId.charAt(0).toUpperCase() + catId.slice(1)} Spending Shift`,
+            description: `Your ${catId} spending has ${percentChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(percentChange).toFixed(0)}% compared to last month.`,
+            confidence: 90,
+            trend: { value: Math.abs(Math.round(percentChange)), isPositive: percentChange < 0 }
+          });
+        }
+      }
+    }
+
+    // 5. INSIGHT: Unusual Activity (Anomaly Detection)
+    // Simple anomaly: transaction > 2.5x the average for that category
+    const categoryAverages: Record<string, { sum: number, count: number }> = {};
+    expenses.forEach(e => {
+      if (!categoryAverages[e.categoryId]) categoryAverages[e.categoryId] = { sum: 0, count: 0 };
+      categoryAverages[e.categoryId].sum += Number(e.amount);
+      categoryAverages[e.categoryId].count += 1;
+    });
+
+    const recentAnomalies = currentMonthExpenses.filter(e => {
+      const avg = categoryAverages[e.categoryId].sum / categoryAverages[e.categoryId].count;
+      return Number(e.amount) > avg * 2.5 && Number(e.amount) > 200; // Only flag if > 200 units
+    });
+
+    if (recentAnomalies.length > 0) {
+      insights.push({
+        type: "warning",
+        title: "Large Transaction Detected",
+        description: `We noticed an unusual ₺${Number(recentAnomalies[0].amount).toFixed(0)} purchase in '${recentAnomalies[0].categoryId}'. Was this expected?`,
+        confidence: 88,
+        actionLabel: "Verify"
+      });
+    }
+
+    // 6. INSIGHT: Subscription Detection
+    const descriptionCounts: Record<string, { amounts: number[], count: number }> = {};
+    expenses.forEach(e => {
+      const desc = e.description.toLowerCase().trim();
+      if (!descriptionCounts[desc]) descriptionCounts[desc] = { amounts: [], count: 0 };
+      descriptionCounts[desc].amounts.push(Number(e.amount));
+      descriptionCounts[desc].count += 1;
+    });
+
+    const subscriptions = Object.entries(descriptionCounts).filter(([desc, data]) => {
+      // Check if it appears multiple times with similar amounts (within 5% range)
+      if (data.count < 2) return false;
+      const avg = data.amounts.reduce((a, b) => a + b) / data.count;
+      return data.amounts.every(a => Math.abs(a - avg) < avg * 0.05);
+    });
+
+    if (subscriptions.length > 0) {
+      const sub = subscriptions[0];
+      insights.push({
+        type: "tip",
+        title: "Subscription Identified",
+        description: `AI detected recurring payments for '${sub[0]}'. You've spent ₺${(sub[1].amounts.reduce((a,b)=>a+b)).toFixed(0)} on this total.`,
+        value: `₺${(sub[1].amounts[0]).toFixed(0)}/mo`,
+        confidence: 95,
+        actionLabel: "Manage"
+      });
+    }
+
+    // 7. Achievement: Low Spending Streak
+    const last7Days = expenses.filter(e => {
+      const d = new Date(e.date);
+      const diff = (now.getTime() - d.getTime()) / (1000 * 3600 * 24);
+      return diff <= 7;
+    });
+    if (last7Days.length > 0 && last7Days.reduce((acc, e) => acc + Number(e.amount), 0) < income * 0.05) {
+      insights.push({
+        type: "achievement",
+        title: "Frugal Week!",
+        description: "You've spent less than 5% of your income in the last 7 days. Keep it up!",
+        confidence: 100,
+        trend: { value: 7, isPositive: true }
+      });
+    }
+
+    // Shuffle and limit to 6
+    const finalInsights = insights.sort(() => 0.5 - Math.random()).slice(0, 6);
+    
+    // Ensure we have at least 1-2 default tips if list is short
+    if (finalInsights.length < 2 && income > 0) {
+      finalInsights.push({
+        type: "action",
+        title: "Smart Savings Opportunity",
+        description: `Based on your income, setting aside ₺${(income * 0.1).toFixed(0)} (10%) right now would bolster your safety net.`,
+        value: `₺${(income * 0.1).toFixed(0)}`,
+        confidence: 80,
+        actionLabel: "Save Now"
+      });
+    }
+
+    res.json(finalInsights);
+
+  } catch (error: any) {
+    console.error(`[AI Insights Error]`, error);
+    res.status(500).json({ message: 'Error generating insights', details: error.message });
+  }
+});
+
+// AI BUDGET PREDICTIONS
+app.get('/ai/budget-predictions', protect, async (req, res) => {
+  const userId = req.user?.id;
+  const DEFAULT_BUDGETS: Record<string, number> = {
+    food: 3000, transport: 1500, shopping: 2000, entertainment: 1000,
+    utilities: 2500, health: 1000, travel: 5000, other: 500
+  };
+
+  try {
+    // 0. Fetch user's custom budget limits
+    const budgetResult = await pool.query('SELECT "categoryId", "limitAmount" FROM "Budget" WHERE "userId" = $1', [userId]);
+    const userLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
+    budgetResult.rows.forEach(row => {
+      userLimits[row.categoryId] = Number(row.limitAmount);
+    });
+
+    const expResult = await pool.query(
+      'SELECT amount, "categoryId", date FROM "Expense" WHERE "userId" = $1 ORDER BY date DESC',
+      [userId]
+    );
+    const expenses = expResult.rows;
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const dayOfMonth = Math.max(1, now.getDate()); // Prevent division by zero
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // 1. Current Month Spending per Category
+    const currentMonthExps = expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const currentCatTotals: Record<string, number> = {};
+    currentMonthExps.forEach(e => {
+      const catId = e.categoryId; // Matching "categoryId" from SQL
+      currentCatTotals[catId] = (currentCatTotals[catId] || 0) + Number(e.amount);
+    });
+
+    // 2. Generate Predictions
+    const predictions = Object.entries(userLimits).map(([catId, budgetLimit]) => {
+      const spentSoFar = currentCatTotals[catId] || 0;
+      // Simple velocity prediction: (spent / days_passed) * total_days
+      const predictedSpend = Math.round((spentSoFar / dayOfMonth) * daysInMonth);
+      
+      let riskLevel: "low" | "medium" | "high" = "low";
+      let suggestion = "You're doing great! Keep it up.";
+
+      const percentOfBudget = (predictedSpend / budgetLimit) * 100;
+
+      if (percentOfBudget > 110) {
+        riskLevel = "high";
+        suggestion = `Predicting ₺${predictedSpend - budgetLimit} over budget. Consider reducing ${catId} spending by 15%.`;
+      } else if (percentOfBudget > 90) {
+        riskLevel = "medium";
+        suggestion = `You're close to the limit. Watch your ${catId} purchases for the rest of the month.`;
+      } else {
+        riskLevel = "low";
+        suggestion = `On track to save ₺${budgetLimit - predictedSpend} in this category. Well done!`;
+      }
+
+      // Add category-specific flavor to suggestions
+      if (riskLevel === "high") {
+        if (catId === "food") suggestion = "Try cooking at home more often to lower your food costs.";
+        if (catId === "shopping") suggestion = "Avoid impulse buys. Wait 24 hours before any new shopping.";
+        if (catId === "transport") suggestion = "Look for cheaper transport options or carpool this week.";
+      }
+
+      return {
+        category: catId.charAt(0).toUpperCase() + catId.slice(1),
+        predictedSpend: Math.max(spentSoFar, predictedSpend), // Don't predict less than already spent
+        budgetLimit,
+        confidence: Math.min(98, 60 + (dayOfMonth * 1.2)), // Confidence grows as month progresses
+        riskLevel,
+        suggestion
+      };
+    });
+
+    // Sort by risk (high first) then by predicted amount
+    predictions.sort((a, b) => {
+      const riskMap = { high: 3, medium: 2, low: 1 };
+      if (riskMap[a.riskLevel] !== riskMap[b.riskLevel]) {
+        return riskMap[b.riskLevel] - riskMap[a.riskLevel];
+      }
+      return b.predictedSpend - a.predictedSpend;
+    });
+
+    res.json(predictions.slice(0, 4)); // Return top 4 most relevant
+
+  } catch (error: any) {
+    console.error(`[AI Budget Prediction Error]`, error);
+    res.status(500).json({ message: 'Error generating budget predictions' });
+  }
+});
+
+// Optimized prediction function for varying data sizes
 app.get('/expenses', protect, async (req, res) => {
   console.log(`Fetching expenses for user: ${req.user?.id}`);
   try {
@@ -257,7 +593,7 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
     if (priceMatches) {
       const prices = priceMatches
         .map((m: string) => parseFloat(m.replace(',', '.')))
-        .filter(n => n > 0 && n < 30000); // filter out numbers that are too large --> likely barcodes or ids
+        .filter((n: number) => n > 0 && n < 30000); // filter out numbers that are too large --> likely barcodes or ids
       
       if (prices.length > 0) {
         amount = Math.max(...prices);
@@ -394,7 +730,7 @@ app.get('/expenses/forecast', protect, async (req, res) => {
   }
 });
 
-// Optimized prediction function for varying data sizes
+// AI INSIGHTS & RECOMMENDATIONS
 async function predictWithLSTM(data:number[]) {
   const n = data.length;
   if (n < 2) return data[0] || 0;
@@ -441,5 +777,38 @@ async function predictWithLSTM(data:number[]) {
 
   return (predictedValue * range) + min;
 }
+
+// gradient boosted tree
+app.get('/budget/optimize', protect, async (req, res) => {
+  const userIncome = req.user?.income || 5000; 
+  const scriptPath = path.join(__dirname, '../../aura-finance-ai/optimize.py');
+   
+   exec(`python3 ${scriptPath} ${userIncome}`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
+     if (error) {
+       console.error(`Exec error: ${error}`);
+       return res.status(500).json({ message: "AI Optimization failed" });
+     }
+ 
+     try {
+       const rawAiResult = JSON.parse(stdout);
+       
+       // Clean and map Kaggle 10 categories to App 8 categories
+       const mappedResults: Record<string, number> = {
+         food: rawAiResult["Food & Drink"] || 0,
+         transport: (rawAiResult["Travel"] || 0) * 0.4, 
+         entertainment: rawAiResult["Entertainment"] || 0,
+         shopping: rawAiResult["Shopping"] || 0,
+         utilities: (rawAiResult["Utilities"] || 0) + (rawAiResult["Rent"] || 0),
+         health: rawAiResult["Health & Fitness"] || 0,
+         travel: (rawAiResult["Travel"] || 0) * 0.6,
+         other: rawAiResult["Other"] || 0
+       };
+
+       res.json(mappedResults);
+     } catch (e) {
+       res.status(500).json({ message: "Failed to parse AI result" });
+     }
+   });
+ });
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
