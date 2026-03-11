@@ -60,6 +60,30 @@ pool.connect()
           UNIQUE("userId", "categoryId")
         )
       `);
+
+       // 1. The "Group" table stores the group name and description
+       await client.query(`
+         CREATE TABLE IF NOT EXISTS "Group" (
+           id UUID PRIMARY KEY,
+           name TEXT NOT NULL,
+           description TEXT,
+           "createdBy" INTEGER REFERENCES "User"(id),
+           "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+         )
+       `);
+
+       // 2. The "GroupMember" table keeps track of which Users are in which Groups
+       await client.query(`
+         CREATE TABLE IF NOT EXISTS "GroupMember" (
+           "groupId" UUID REFERENCES "Group"(id) ON DELETE CASCADE,
+           "userId" INTEGER REFERENCES "User"(id) ON DELETE CASCADE,
+           "joinedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           PRIMARY KEY ("groupId", "userId")
+         )
+       `);
+
+       // 3. This adds a "groupId" tag to your expenses so we know if an expense belongs to a group
+       await client.query('ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "groupId" UUID REFERENCES "Group"(id) ON DELETE SET NULL');
     } catch (e) {
       console.log('Database migration log:', e.message);
     }
@@ -108,6 +132,91 @@ app.post('/budget', protect, async (req, res) => {
   }
 });
 
+// --- GROUP ENDPOINTS ---
+// 1. Fetch all groups I belong to (with members)
+app.get('/groups', protect, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    // Fetch groups
+    const groupResult = await pool.query(`
+      SELECT g.* FROM "Group" g
+      JOIN "GroupMember" gm ON g.id = gm."groupId"
+      WHERE gm."userId" = $1
+      ORDER BY g."createdAt" DESC
+    `, [userId]);
+
+    const groups = groupResult.rows;
+
+    // For each group, fetch members and real expenses
+    for (let group of groups) {
+      const membersResult = await pool.query(`
+        SELECT u.id, u.name, u.email FROM "User" u
+        JOIN "GroupMember" gm ON u.id = gm."userId"
+        WHERE gm."groupId" = $1
+      `, [group.id]);
+
+      const expensesResult = await pool.query(`
+        SELECT * FROM "Expense" WHERE "groupId" = $1 ORDER BY date DESC
+      `, [group.id]);
+
+      group.members = membersResult.rows;
+      group.expenses = expensesResult.rows.map(e => ({
+        ...e,
+        paidBy: e.userId,
+        splitBetween: group.members.map((m: any) => m.id) // Default split between all for now
+      }));
+    }
+    res.json(groups);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching groups', details: error.message });
+  }
+});
+
+ // 2. Create a new group
+ app.post('/groups', protect, async (req, res) => {
+ const { name, description, memberEmails } = req.body;
+ const userId = req.user?.id;
+ const groupId = uuidv4();
+
+ try {
+   // Start a transaction 
+   await pool.query('BEGIN');
+
+   // A. Insert the group
+   await pool.query(
+     'INSERT INTO "Group" (id, name, description, "createdBy") VALUES ($1, $2, $3, $4)',
+     [groupId, name, description, userId]
+   );
+
+   // B. Add the creator (you) as a member
+   await pool.query(
+     'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2)',
+     [groupId, userId]
+   );
+
+   // C. (Optional) Add other members by looking up their emails
+   if (memberEmails && memberEmails.length > 0) {
+     for (const email of memberEmails) {
+       const userRes = await pool.query('SELECT id FROM "User" WHERE email = $1', [email]);
+       if (userRes.rows.length > 0) {
+         await pool.query(
+           'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2) ON CONFLICT DO NOTHING',
+           [groupId, userRes.rows[0].id]
+         );
+       }
+     }
+   }
+
+   await pool.query('COMMIT');
+   res.status(201).json({ id: groupId, name, description });
+ } catch (error: any) {
+   await pool.query('ROLLBACK');
+   res.status(500).json({ message: 'Error creating group', details: error.message });
+ }
+});
+
+
 // --- ROUTES ---
 
 app.get('/', (req, res) => res.send('Aura Finance Backend is running!'));
@@ -146,6 +255,29 @@ app.put('/auth/user', protect, async (req, res) => {
     res.json(result.rows[0]);
   } catch (error: any) {
     res.status(500).json({ message: 'Error updating income', details: error.message });
+  }
+});
+
+// 3. Add a member to a group
+app.post('/groups/:id/members', protect, async (req, res) => {
+  const { email } = req.body;
+  const groupId = req.params.id;
+
+  try {
+    const userRes = await pool.query('SELECT id FROM "User" WHERE email = $1', [email]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userIdToAdd = userRes.rows[0].id;
+    await pool.query(
+      'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [groupId, userIdToAdd]
+    );
+
+    res.json({ message: 'Member added successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error adding member', details: error.message });
   }
 });
 
@@ -486,13 +618,52 @@ app.get('/ai/budget-predictions', protect, async (req, res) => {
 
 // Optimized prediction function for varying data sizes
 app.get('/expenses', protect, async (req, res) => {
-  console.log(`Fetching expenses for user: ${req.user?.id}`);
+  const userId = req.user?.id;
   try {
-    const result = await pool.query(
-      'SELECT id, amount, "categoryId", description, date, notes FROM "Expense" WHERE "userId" = $1 ORDER BY date DESC',
-      [req.user?.id]
-    );
-    res.json(result.rows);
+    // 1. Fetch:
+    //    a) Personal expenses (no group, paid by me)
+    //    b) Group expenses where I am a member (regardless of who paid)
+    const result = await pool.query(`
+      SELECT DISTINCT e.* FROM "Expense" e
+      LEFT JOIN "GroupMember" gm ON e."groupId" = gm."groupId"
+      WHERE (e."userId" = $1 AND e."groupId" IS NULL)
+         OR (gm."userId" = $1 AND e."groupId" IS NOT NULL)
+      ORDER BY e.date DESC
+    `, [userId]);
+    
+    const rawExpenses = result.rows;
+    const finalExpenses = [];
+
+    for (let exp of rawExpenses) {
+      if (exp.groupId) {
+        // 2. Find out how many people are in that group to calculate the split
+        const memberCountRes = await pool.query(
+          'SELECT COUNT(*) as count FROM "GroupMember" WHERE "groupId" = $1',
+          [exp.groupId]
+        );
+        const count = parseInt(memberCountRes.rows[0].count) || 1;
+        
+        // 3. The amount shown in the personal list is ONLY the user's share
+        const myShare = Number(exp.amount) / count;
+
+        finalExpenses.push({
+          ...exp,
+          amount: myShare,
+          isGroupShare: true,
+          totalGroupAmount: exp.amount,
+          paidByMe: exp.userId === userId
+        });
+      } else {
+        // Personal expense, 100% belongs to user
+        finalExpenses.push({
+          ...exp,
+          amount: Number(exp.amount),
+          paidByMe: true
+        });
+      }
+    }
+
+    res.json(finalExpenses);
   } catch (error: any) {
     console.error('Fetch error:', error.message);
     res.status(500).json({ message: 'Error fetching expenses', details: error.message });
@@ -500,12 +671,12 @@ app.get('/expenses', protect, async (req, res) => {
 });
 
 app.post('/expenses', protect, async (req, res) => {
-  const { amount, categoryId, description, date, notes } = req.body;
+  const { amount, categoryId, description, date, notes, groupId } = req.body;
   const id = uuidv4();
   try {
     const result = await pool.query(
-      'INSERT INTO "Expense" (id, amount, "categoryId", description, date, notes, "userId") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [id, amount, categoryId, description, date, notes, req.user?.id]
+      'INSERT INTO "Expense" (id, amount, "categoryId", description, date, notes, "userId", "groupId") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [id, amount, categoryId, description, date, notes, req.user?.id, groupId || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error: any) {
@@ -625,39 +796,42 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
 app.get('/expenses/history', protect, async (req, res) => {
   try {
     const userId = req.user?.id;
-    // 1. Fetch all expenses for the user
+    // fetch all expenses for the user
     const result = await pool.query(
       'SELECT amount, date FROM "Expense" WHERE "userId" = $1 ORDER BY date ASC',
       [userId]
     );
 
-    // 2. Fetch current total budget to use as a baseline for all months
+    // fetch current total budget
     const budgetResult = await pool.query('SELECT SUM("limitAmount") as "totalBudget" FROM "Budget" WHERE "userId" = $1', [userId]);
-    const currentTotalBudget = Number(budgetResult.rows[0]?.totalBudget) || 10500; // Default fallback
+    const currentTotalBudget = Number(budgetResult.rows[0]?.totalBudget) || 10500;
 
     const expenses = result.rows;
 
-    // 3. Create a map to store monthly totals
+    // create a map using YYYY MM as keys for perfect sorting
     const monthlyTotals: Record<string, number> = {};
 
     expenses.forEach(exp => {
       const date = new Date(exp.date);
       if (!isNaN(date.getTime())) {
-        // Use short month name format "Jul", "Aug" etc
-        const monthName = date.toLocaleString('default', { month: 'short' });
-        monthlyTotals[monthName] = (monthlyTotals[monthName] || 0) + Number(exp.amount);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
       }
     }); 
 
-    // 4. Convert map to a sorted array of objects (using last 6 months logic for the chart)
-    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // convert to array and sort by the key 
     const history = Object.entries(monthlyTotals)
-      .map(([month, amount]) => ({ 
-        month, 
-        spent: amount,
-        budget: currentTotalBudget
-      }))
-      .sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+      .map(([monthKey, amount]) => {
+        const [year, month] = monthKey.split('-');
+        const dateObj = new Date(parseInt(year), parseInt(month) - 1);
+        return { 
+          monthKey, // "2026-03"
+          month: dateObj.toLocaleString('default', { month: 'short' }), // "Mar"
+          spent: amount,
+          budget: currentTotalBudget
+        };
+      })
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
 
     res.json(history);
   } catch (error: any) {
@@ -692,7 +866,7 @@ app.get('/expenses/forecast', protect, async (req, res) => {
 
     const n = history.length;
     
-    // Safety check for metadata
+    // aafety check for metadata
     if (n === 0) {
       return res.json({ prediction: 0, trend: "stable", confidence: 0, historyCount: 0 });
     }
@@ -713,11 +887,11 @@ app.get('/expenses/forecast', protect, async (req, res) => {
     let usedFallback = false;
 
     try {
-      // Attempt LSTM/RNN
+      // attempt LSTM/RNN
       prediction = await predictWithLSTM(amounts);
       if (prediction <= (lastAmount * 0.1) || isNaN(prediction)) throw new Error("AI Outlier");
     } catch (aiError) {
-      // Fallback 1: Linear Regression / Trend Growth
+      // fallback  Linear Regression / Trend Growth
       usedFallback = true;
       const firstAmount = amounts[0];
       const avgGrowthPerMonth = (lastAmount - firstAmount) / (n - 1);
@@ -747,13 +921,13 @@ async function predictWithLSTM(data:number[]) {
   const n = data.length;
   if (n < 2) return data[0] || 0;
 
-  // 2. Normalization with padding
+  //  normalization with padding
   const max = Math.max(...data) * 1.5; 
   const min = Math.min(...data) * 0.5;
   const range = max - min || 1; 
   const normalizedData = data.map(val => (val - min) / range);
 
-  // 3. Prepare Tensors
+  // prepare Tensors
   const xs = [];
   const ys = [];
   for (let i = 0; i < n - 1; i++) {
@@ -764,7 +938,7 @@ async function predictWithLSTM(data:number[]) {
   const tensorXs = tf.tensor3d(xs, [xs.length, 1, 1]);
   const tensorYs = tf.tensor2d(ys, [ys.length, 1]);
 
-  // 4. Dynamic Model Selection
+  // Dynamic Model Selection
   // LSTM needs more data to be stable. For < 5 months, SimpleRNN is safer.
   const model = tf.sequential();
   if (n < 5) {
@@ -776,10 +950,10 @@ async function predictWithLSTM(data:number[]) {
   
   model.compile({ optimizer: tf.train.adam(0.02), loss: 'meanSquaredError' });
 
-  // 5. Training
+  //  Training
   await model.fit(tensorXs, tensorYs, { epochs: 250, verbose: 0 });
 
-  // 6. Predict
+  //  Predict
   const lastVal = normalizedData[n - 1];
   const input = tf.tensor3d([[[lastVal]]]);
   const prediction = model.predict(input) as tf.Tensor;

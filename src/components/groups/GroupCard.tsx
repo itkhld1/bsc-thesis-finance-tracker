@@ -2,8 +2,10 @@ import { Users, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Group, getTotalGroupExpenses, getUserBalance } from "@/data/groupsData";
+import { getTotalGroupExpenses, getUserBalance } from "@/data/groupsData";
 import { cn } from "@/lib/utils";
+import { Group } from "@/hooks/useGroups";
+import { useAuth } from "@/context/AuthContext";
 
 interface GroupCardProps {
   group: Group;
@@ -11,8 +13,9 @@ interface GroupCardProps {
 }
 
 export function GroupCard({ group, onClick }: GroupCardProps) {
-  const totalExpenses = getTotalGroupExpenses(group);
-  const userBalance = getUserBalance(group, "user-1");
+  const { user } = useAuth();
+  const totalExpenses = getTotalGroupExpenses(group as any);
+  const userBalance = user ? getUserBalance(group as any, user.id.toString()) : 0;
 
   return (
     <Card
@@ -41,7 +44,7 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
               {group.members.slice(0, 4).map((member) => (
                 <Avatar key={member.id} className="w-8 h-8 border-2 border-background">
                   <AvatarFallback className="text-xs bg-muted">
-                    {member.name.split(" ").map(n => n[0]).join("")}
+                    {member.name ? member.name.split(" ").map(n => n[0]).join("") : "?"}
                   </AvatarFallback>
                 </Avatar>
               ))}

@@ -1,45 +1,54 @@
 import { useState } from "react";
-import { Users, Search } from "lucide-react";
+import { Users, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GroupCard } from "@/components/groups/GroupCard";
 import { GroupDetail } from "@/components/groups/GroupDetail";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
-import { mockGroups, Group, mockMembers } from "@/data/groupsData";
-import { toast } from "sonner";
+import { useGroups, Group } from "@/hooks/useGroups";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Groups() {
-  const [groups, setGroups] = useState<Group[]>(mockGroups);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const { groups, isLoading, createGroup } = useGroups();
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+
+  const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchQuery.toLowerCase())
+    group.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateGroup = (name: string, description: string, memberEmails: string[]) => {
-    const newGroup: Group = {
-      id: `group-${Date.now()}`,
-      name,
-      description,
-      members: [
-        mockMembers[0], // "You"
-        ...memberEmails.map((email, i) => ({
-          id: `new-user-${Date.now()}-${i}`,
-          name: email.split("@")[0],
-          email,
-        })),
-      ],
-      expenses: [],
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setGroups([newGroup, ...groups]);
+  const handleCreateGroup = async (name: string, description: string, memberEmails: string[]) => {
+    try {
+      await createGroup({ name, description, memberEmails });
+      toast({
+        title: "Success",
+        description: "Group created successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create group. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="ml-2 text-muted-foreground">Loading groups...</p>
+      </div>
+    );
+  }
 
   if (selectedGroup) {
     return (
       <div className="animate-fade-in">
-        <GroupDetail group={selectedGroup} onBack={() => setSelectedGroup(null)} />
+        <GroupDetail group={selectedGroup as any} onBack={() => setSelectedGroupId(null)} />
       </div>
     );
   }
@@ -73,7 +82,7 @@ export default function Groups() {
             <GroupCard
               key={group.id}
               group={group}
-              onClick={() => setSelectedGroup(group)}
+              onClick={() => setSelectedGroupId(group.id)}
             />
           ))}
         </div>
