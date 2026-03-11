@@ -47,20 +47,32 @@ export function AIPredictiveChart() {
         
         let chartPoints = history.map((h: any) => {
           return {
-            month: h.month, // Backend already returns "Feb", "Mar" etc.
+            monthKey: h.monthKey,
+            month: h.month, 
             actual: Number(h.spent),
             predicted: Number(h.spent), 
             confidence: 100
           };
         });
 
-        // 4. Add Future Prediction
+        // 4. Add Future Prediction (Fixing YYYY-MM logic)
         if (chartPoints.length > 0 && foreData.historyCount > 0) {
           const lastPoint = chartPoints[chartPoints.length - 1];
-          const lastMonthIdx = months.indexOf(lastPoint.month);
-          const nextMonthName = months[(lastMonthIdx + 1) % 12];
+          const [year, month] = lastPoint.monthKey.split('-').map(Number);
+          
+          // Calculate next month and year correctly
+          let nextMonth = month + 1;
+          let nextYear = year;
+          if (nextMonth > 12) {
+            nextMonth = 1;
+            nextYear += 1;
+          }
+          
+          const nextMonthKey = `${nextYear}-${nextMonth.toString().padStart(2, '0')}`;
+          const nextMonthName = months[nextMonth - 1];
           
           chartPoints.push({
+            monthKey: nextMonthKey,
             month: nextMonthName,
             actual: null,
             predicted: Number(foreData.prediction),
