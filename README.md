@@ -40,8 +40,8 @@ Aura Finance is a comprehensive personal finance management system that leverage
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/aura-finance.git
-cd aura-finance
+git clone https://github.com/itkhld1/bsc-thesis-finance-tracker.git
+cd bsc-thesis-finance-tracker
 ```
 
 ### 2. Backend Setup
