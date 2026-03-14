@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { ArrowLeft, Plus, ArrowRightLeft, Receipt, Loader2, X } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ArrowLeft, Plus, ArrowRight, Receipt, Loader2, TrendingUp, TrendingDown, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +16,17 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCategories } from "@/hooks/useCategories";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Cell, 
+  ResponsiveContainer, 
+  Tooltip, 
+  ReferenceLine,
+  CartesianGrid
+} from "recharts";
 
 interface GroupDetailProps {
   group: Group;
@@ -41,9 +52,16 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     date: new Date().toISOString().split('T')[0]
   });
 
-  const debts = calculateDebts(group);
+  const debts = useMemo(() => calculateDebts(group), [group]);
   const totalExpenses = getTotalGroupExpenses(group);
   const userBalance = user ? getUserBalance(group, user.id.toString()) : 0;
+
+  const balanceData = useMemo(() => {
+    return group.members.map(member => ({
+      name: member.name,
+      balance: getUserBalance(group, member.id.toString())
+    })).sort((a, b) => a.balance - b.balance);
+  }, [group]);
 
   const handleAddMember = async () => {
     if (!memberEmail.trim()) return;
@@ -106,169 +124,254 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
           <h2 className="text-2xl font-bold text-foreground">{group.name}</h2>
-          <p className="text-muted-foreground">{group.description}</p>
+          <p className="text-base text-muted-foreground">{group.description}</p>
         </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Total Expenses</p>
-            <p className="text-2xl font-bold text-foreground">₺{totalExpenses.toFixed(2)}</p>
+        <Card className="border-slate-100 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+              <Receipt className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Group Spending</p>
+              <p className="text-2xl font-bold text-foreground">₺{totalExpenses.toFixed(2)}</p>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Members</p>
-            <p className="text-2xl font-bold text-foreground">{group.members.length}</p>
+        <Card className="border-slate-100 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-purple-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Members Involved</p>
+              <p className="text-2xl font-bold text-foreground">{group.members.length}</p>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Your Balance</p>
-            <p className={cn(
-              "text-2xl font-bold",
-              userBalance >= 0 ? "text-green-600" : "text-red-600"
+        <Card className="border-slate-100 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center",
+              userBalance >= 0 ? "bg-green-50" : "bg-red-50"
             )}>
-              {userBalance >= 0 ? "+" : ""}{userBalance.toFixed(2)}
-            </p>
+              {userBalance >= 0 ? 
+                <TrendingUp className="w-5 h-5 text-green-500" /> : 
+                <TrendingDown className="w-5 h-5 text-red-500" />
+              }
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Your Net Balance</p>
+              <p className={cn(
+                "text-2xl font-bold",
+                userBalance >= 0 ? "text-green-600" : "text-red-600"
+              )}>
+                {userBalance >= 0 ? "+" : ""}₺{Math.abs(userBalance).toFixed(2)}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Members & Balances */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Members & Balances
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {group.members.map((member) => {
-              const balance = getUserBalance(group, member.id.toString());
-              return (
-                <div key={member.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-9 h-9">
-                      <AvatarFallback className="text-xs bg-muted">
-                        {member.name.split(" ").map(n => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-sm">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">{member.email}</p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "text-xs",
-                      balance > 0 && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                      balance < 0 && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                    )}
-                  >
-                    {balance > 0 ? "+" : ""}{balance === 0 ? "Settled" : `₺${balance.toFixed(2)}`}
-                  </Badge>
-                </div>
-              );
-            })}
-            <Separator className="my-3" />
-            <Button variant="outline" size="sm" className="w-full" onClick={() => setAddMemberOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Member
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Debt Settlements */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <ArrowRightLeft className="w-4 h-4" />
-              Settlements
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {debts.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                All settled up! 🎉
-              </p>
-            ) : (
-              debts.map((debt, index) => {
-                const fromMember = getMemberById(group.members, debt.from.toString());
-                const toMember = getMemberById(group.members, debt.to.toString());
-                return (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-7 h-7">
-                        <AvatarFallback className="text-xs">
-                          {fromMember?.name.split(" ").map(n => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{fromMember?.name}</span>
-                      <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
-                      <Avatar className="w-7 h-7">
-                        <AvatarFallback className="text-xs">
-                          {toMember?.name.split(" ").map(n => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{toMember?.name}</span>
-                    </div>
-                    <span className="font-semibold text-primary">₺{debt.amount.toFixed(2)}</span>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Expenses */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="pb-3">
+        {/* Settlement Strategy & Chart */}
+        <Card className="lg:col-span-2 border-slate-100 shadow-sm overflow-hidden">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Receipt className="w-4 h-4" />
-                Expenses
-              </CardTitle>
-              <Button size="sm" className="gradient-primary" onClick={() => setAddExpenseOpen(true)}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </Button>
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Settlement Overview
+                </CardTitle>
+                <CardDescription className="text-sm">Visualizing who owes and who is owed</CardDescription>
+              </div>
+              <Badge variant="outline" className="text-xs font-normal">
+                {debts.length === 0 ? "Fully Settled" : `${debts.length} Pending Payments`}
+              </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {group.expenses.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No group expenses yet</p>
-            ) : (
-              group.expenses.map((expense) => {
-                const paidByMember = getMemberById(group.members, expense.paidBy.toString());
-                return (
-                  <div key={expense.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                    <div>
-                      <p className="font-medium text-sm">{expense.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Paid by {paidByMember?.name || "Unknown"} • {format(new Date(expense.date), "MMM d")}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">₺{expense.amount.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {expense.splitBetween.length} people
-                      </p>
-                    </div>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              {/* Balance Chart */}
+              <div className="md:col-span-3 h-[250px] w-full mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={balanceData} 
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 13, fill: '#64748b' }}
+                      width={90}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'transparent' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const val = payload[0].value as number;
+                          return (
+                            <div className="bg-white p-2 border border-slate-200 shadow-md rounded-lg text-xs">
+                              <p className="font-bold">{payload[0].payload.name}</p>
+                              <p className={val >= 0 ? "text-green-600" : "text-red-600"}>
+                                {val >= 0 ? "Is owed: " : "Owes: "} ₺{Math.abs(val).toFixed(2)}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <ReferenceLine x={0} stroke="#cbd5e1" strokeWidth={2} />
+                    <Bar dataKey="balance" radius={[0, 4, 4, 0]}>
+                      {balanceData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.balance >= 0 ? '#10b981' : '#ef4444'} 
+                          fillOpacity={0.8}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Repayment List */}
+              <div className="md:col-span-2 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Suggested Payments</p>
+                {debts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/30 rounded-xl">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      🎉 Everyone is settled up!
+                    </p>
                   </div>
-                );
-              })
-            )}
+                ) : (
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
+                    {debts.map((debt, index) => {
+                      const fromMember = getMemberById(group.members, debt.from.toString());
+                      const toMember = getMemberById(group.members, debt.to.toString());
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                          <div className="flex items-center gap-2 overflow-hidden flex-1">
+                            <span className="font-bold text-[13px] text-slate-900 truncate">{fromMember?.name}</span>
+                            <span className="text-[10px] text-muted-foreground font-bold uppercase shrink-0">pays</span>
+                            <span className="font-bold text-[13px] text-slate-900 truncate">{toMember?.name}</span>
+                          </div>
+                          <div className="ml-3 shrink-0">
+                            <span className="text-[14px] font-black text-primary">₺{debt.amount.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Sidebar Cards */}
+        <div className="space-y-6">
+          {/* Members & Balances List */}
+          <Card className="border-slate-100 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Members</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {group.members.map((member) => {
+                const balance = getUserBalance(group, member.id.toString());
+                return (
+                  <div key={member.id} className="flex items-center justify-between group/member">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-9 h-9 transition-transform group-hover/member:scale-110">
+                        <AvatarFallback className="text-[10px] bg-muted">
+                          {member.name.split(" ").map(n => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">{member.email}</p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-xs px-2 py-0.5 h-6",
+                        balance > 0 && "bg-green-50 text-green-700 border-green-100",
+                        balance < 0 && "bg-red-50 text-red-700 border-red-100",
+                        balance === 0 && "bg-slate-50 text-slate-500 border-slate-100"
+                      )}
+                    >
+                      {balance > 0 ? "+" : ""}{balance === 0 ? "Settled" : `₺${balance.toFixed(2)}`}
+                    </Badge>
+                  </div>
+                );
+              })}
+              <Separator className="my-2" />
+              <Button variant="outline" size="sm" className="w-full text-sm h-9" onClick={() => setAddMemberOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Member
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Recent Expenses List */}
+          <Card className="border-slate-100 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  Expenses
+                </CardTitle>
+                <Button size="sm" className="gradient-primary h-7 text-xs px-2" onClick={() => setAddExpenseOpen(true)}>
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {group.expenses.length === 0 ? (
+                <div className="text-center py-6">
+                  <Receipt className="w-9 h-9 text-slate-200 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No expenses yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
+                  {group.expenses.slice().reverse().map((expense) => {
+                    const paidByMember = getMemberById(group.members, expense.paidBy);
+                    return (
+                      <div key={expense.id} className="p-2.5 rounded-lg border border-slate-100 bg-white hover:border-primary/20 transition-colors">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium text-sm truncate flex-1">{expense.description}</p>
+                          <p className="font-bold text-sm ml-2">₺{expense.amount.toFixed(2)}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">
+                            By {paidByMember?.name || "Member"} • {format(new Date(expense.date), "MMM d")}
+                          </p>
+                          <Badge variant="outline" className="text-[9px] h-4.5 px-1 leading-none">
+                            {expense.splitBetween.length} ppl
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Add Member Dialog */}

@@ -127,25 +127,26 @@ export function calculateDebts(group: Group): DebtCalculation[] {
   return debts;
 }
 
-export function getMemberById(members: GroupMember[], id: string): GroupMember | undefined {
-  return members.find(m => m.id === id);
+export function getMemberById(members: (GroupMember | any)[], id: string | number): GroupMember | undefined {
+  return members.find(m => m.id == id);
 }
 
 export function getTotalGroupExpenses(group: Group): number {
   return group.expenses.reduce((sum, exp) => sum + exp.amount, 0);
 }
 
-export function getUserBalance(group: Group, userId: string): number {
+export function getUserBalance(group: Group, userId: string | number): number {
   let balance = 0;
   
   group.expenses.forEach(expense => {
     const splitAmount = expense.amount / expense.splitBetween.length;
     
-    if (expense.paidBy === userId) {
+    // Use loose equality to match IDs regardless of type (string/number)
+    if (expense.paidBy == userId) {
       balance += expense.amount;
     }
     
-    if (expense.splitBetween.includes(userId)) {
+    if (expense.splitBetween.some(id => id == userId)) {
       balance -= splitAmount;
     }
   });
