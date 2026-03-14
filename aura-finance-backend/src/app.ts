@@ -966,35 +966,46 @@ async function predictWithLSTM(data:number[]) {
 
 // gradient boosted tree
 app.get('/budget/optimize', protect, async (req, res) => {
-  const userIncome = req.user?.income || 5000; 
-  const scriptPath = path.join(__dirname, '../../aura-finance-ai/optimize.py');
-   
-   exec(`python3 ${scriptPath} ${userIncome}`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
-     if (error) {
-       console.error(`Exec error: ${error}`);
-       return res.status(500).json({ message: "AI Optimization failed" });
-     }
- 
-     try {
-       const rawAiResult = JSON.parse(stdout);
-       
-       // Clean and map Kaggle 10 categories to App 8 categories
-       const mappedResults: Record<string, number> = {
-         food: rawAiResult["Food & Drink"] || 0,
-         transport: (rawAiResult["Travel"] || 0) * 0.4, 
-         entertainment: rawAiResult["Entertainment"] || 0,
-         shopping: rawAiResult["Shopping"] || 0,
-         utilities: (rawAiResult["Utilities"] || 0) + (rawAiResult["Rent"] || 0),
-         health: rawAiResult["Health & Fitness"] || 0,
-         travel: (rawAiResult["Travel"] || 0) * 0.6,
-         other: rawAiResult["Other"] || 0
-       };
+  const userId = req.user?.id;
+  
+  try {
+    // Fetch the latest income directly from the DB
+    const userRes = await pool.query('SELECT income FROM "User" WHERE id = $1', [userId]);
+    const userIncome = Number(userRes.rows[0]?.income) || 5000;
+    
+    console.log(`[AI Optimizer] Running for User ${userId} with Income: ${userIncome}`);
+    
+    const scriptPath = path.join(__dirname, '../../aura-finance-ai/optimize.py');
+    
+    exec(`python3 ${scriptPath} ${userIncome}`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Exec error: ${error}`);
+        return res.status(500).json({ message: "AI Optimization failed" });
+      }
 
-       res.json(mappedResults);
-     } catch (e) {
-       res.status(500).json({ message: "Failed to parse AI result" });
-     }
-   });
- });
+      try {
+        const rawAiResult = JSON.parse(stdout);
+        
+        // Clean and map Kaggle 10 categories to App 8 categories
+        const mappedResults: Record<string, number> = {
+          food: rawAiResult["Food & Drink"] || 0,
+          transport: (rawAiResult["Travel"] || 0) * 0.4, 
+          entertainment: rawAiResult["Entertainment"] || 0,
+          shopping: rawAiResult["Shopping"] || 0,
+          utilities: (rawAiResult["Utilities"] || 0) + (rawAiResult["Rent"] || 0),
+          health: rawAiResult["Health & Fitness"] || 0,
+          travel: (rawAiResult["Travel"] || 0) * 0.6,
+          other: rawAiResult["Other"] || 0
+        };
+
+        res.json(mappedResults);
+      } catch (e) {
+        res.status(500).json({ message: "Failed to parse AI result" });
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching user data' });
+  }
+});
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
