@@ -4,6 +4,7 @@ import { AIBadge } from "@/components/ai/AIBadge";
 import { cn } from "@/lib/utils";
 import { Expense } from "@/hooks/useExpenses";
 import { useBudget } from "@/hooks/useBudget";
+import { Link } from "react-router-dom";
 
 interface AIRecommendationsProps {
   expenses: Expense[];
@@ -64,7 +65,8 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
           text: `You've spent ₺${total.toFixed(0)} (${percent}%) of your ${catId} budget.`,
           type: "warning",
           confidence: 98,
-          action: "View budget"
+          action: "View budget",
+          path: "/budget"
         });
       }
     }
@@ -78,12 +80,12 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
         text: `Successfully analyzed ${monthlyExpenses.length} transactions this month. Everything looks categorized!`,
         type: "success",
         confidence: 100,
-        action: "Review"
+        action: "Review",
+        path: "/expenses"
       });
     }
 
     // 3. General Trend (Matching Image: Friday Pattern)
-    // In a real app, we'd analyze history. For now, let's keep it based on real presence of data.
     if (expenses.length > 5) {
       recs.push({
         id: "trend-friday",
@@ -92,7 +94,8 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
         text: "Based on your history, Friday is your highest spending day. Try a 'No Spend Friday'!",
         type: "trend",
         confidence: 90,
-        action: "See details"
+        action: "See details",
+        path: "/expenses"
       });
     }
 
@@ -105,7 +108,8 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
         text: "Add some expenses to see personalized recommendations and spending patterns.",
         type: "success",
         confidence: 100,
-        action: "Add Expense"
+        action: "Add Expense",
+        path: "/add-expense"
       });
     }
 
@@ -148,7 +152,7 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
               <div
                 key={rec.id}
                 className={cn(
-                  "group relative p-4 rounded-xl border transition-all duration-300 hover:shadow-md cursor-pointer",
+                  "group relative p-4 rounded-xl border transition-all duration-300 hover:shadow-md",
                   styles.bg,
                   styles.border,
                   index === 2 ? "sm:col-span-2 lg:col-span-1" : ""
@@ -168,13 +172,13 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
                     <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
                       {rec.text}
                     </p>
-                    <button className={cn(
-                      "mt-2 text-xs font-semibold flex items-center gap-1 transition-colors",
+                    <Link to={rec.path} className={cn(
+                      "mt-2 text-xs font-semibold flex items-center gap-1 transition-colors w-fit",
                       styles.text,
                       "hover:underline"
                     )}>
                       {rec.action} →
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
