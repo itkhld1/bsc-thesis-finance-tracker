@@ -108,7 +108,7 @@ export function AISmartAlerts({ expenses }: AISmartAlertsProps) {
                 <div
                   key={alert.id}
                   className={cn(
-                    "relative p-4 rounded-xl border transition-all duration-300 hover:shadow-sm",
+                    "relative p-4 rounded-xl border transition-all duration-300 hover:shadow-md",
                     config.bg,
                     config.border
                   )}
