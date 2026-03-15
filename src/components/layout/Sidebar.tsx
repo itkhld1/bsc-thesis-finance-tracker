@@ -155,11 +155,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <DropdownMenuTrigger asChild>
                   <button className="outline-none group">
                     <Avatar className={cn(
-                      "transition-transform duration-300 group-hover:scale-105 border-2 border-sidebar-border shadow-sm",
-                      collapsed ? "w-10 h-10" : "w-10 h-10"
+                      "transition-transform duration-300 group-hover:scale-105 border-2 border-white shadow-sm",
+                      "w-10 h-10 !bg-white"
                     )}>
-                      <AvatarImage src="/bykhalid.jpeg" />
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold">{userInitials}</AvatarFallback>
+                      <AvatarFallback className="!bg-white !text-slate-900 font-black text-xs">{userInitials}</AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
