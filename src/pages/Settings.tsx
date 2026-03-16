@@ -36,6 +36,26 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="pt-20 pb-12 text-center">
+        <div className="inline-flex flex-col items-center gap-2">
+          <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+            Designed & Engineered by
+            <a 
+              href="https://github.com/itkhld1?tab=overview&from=2026-03-01&to=2026-03-15" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-primary transition-colors font-bold underline decoration-primary/30 underline-offset-4"
+            >
+              Khaled Samim
+            </a>
+          </p>
+          <div className="h-px w-8 bg-border" />
+          <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">
+          Bachelor Thesis in Computer Engineering
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
