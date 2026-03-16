@@ -330,7 +330,7 @@ app.post('/auth/register', async (req, res) => {
       [email, hashedPassword, name, username]
     );
     const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '7d' });
     res.status(201).json({ token, user });
   } catch (error: any) {
     if (error.code === '23505') return res.status(409).json({ message: 'User or username already exists' });
@@ -344,7 +344,7 @@ app.post('/auth/login', async (req, res) => {
     const result = await pool.query('SELECT id, email, name, username, password_hash, income FROM "User" WHERE email = $1', [email]);
     const user = result.rows[0];
     if (user && await bcrypt.compare(password, user.password_hash)) {
-      const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '1h' });
+      const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '7d' });
       return res.json({ token, user: { id: user.id, email: user.email, name: user.name, username: user.username, income: user.income } });
     }
     res.status(401).json({ message: 'Invalid credentials' });

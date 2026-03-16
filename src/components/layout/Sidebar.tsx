@@ -10,11 +10,13 @@ import {
   LogOut,
   User,
   ShieldCheck,
-  ChevronDown
+  ChevronDown,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,9 +36,15 @@ const navItems = [
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const isMobile = useIsMobile();
 
   const displayName = user?.name || user?.username || user?.email || "Guest User";
   const userInitials = displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -44,12 +52,13 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed top-0 left-0 h-screen flex flex-col z-50 w-[280px]",
-        "bg-sidebar backdrop-blur-xl border-r border-sidebar-border shadow-2xl"
+        "fixed top-0 left-0 h-screen flex flex-col z-50 w-[280px] transition-transform duration-500 ease-in-out",
+        "bg-sidebar backdrop-blur-xl border-r border-sidebar-border shadow-2xl",
+        isOpen ? "translate-x-0" : "-translate-x-full"
       )}
     >
       {/* Brand Header */}
-      <div className="h-[80px] flex items-center px-5 mb-4 border-b border-sidebar-border/50">
+      <div className="relative h-[80px] flex items-center px-5 mb-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-3 group cursor-pointer">
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-emerald-400 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500" />
@@ -62,6 +71,18 @@ export function Sidebar() {
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">Smart AI Engine</span>
           </div>
         </div>
+
+        {/* Close Button for Mobile (Top Trailing) */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg"
+            onClick={onClose}
+          >
+            <X size={18} />
+          </Button>
+        )}
       </div>
 
       {/* Navigation section */}
@@ -77,6 +98,7 @@ export function Sidebar() {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={onClose}
                   className={cn(
                     "relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group",
                     isActive
