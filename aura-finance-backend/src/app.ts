@@ -281,6 +281,33 @@ app.post('/groups/:id/members', protect, async (req, res) => {
   }
 });
 
+// 4. Delete a group
+app.delete('/groups/:id', protect, async (req, res) => {
+  const groupId = req.params.id;
+  const userId = req.user?.id;
+
+  // Basic UUID validation to prevent PG errors
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(groupId)) {
+    return res.status(404).json({ message: 'Group not found (invalid ID format)' });
+  }
+
+  try {
+    // Only the creator can delete the group (optional check, but safer)
+    const groupCheck = await pool.query('SELECT "createdBy" FROM "Group" WHERE id = $1', [groupId]);
+    if (groupCheck.rows.length === 0) return res.status(404).json({ message: 'Group not found' });
+    
+    if (groupCheck.rows[0].createdBy !== userId) {
+      return res.status(403).json({ message: 'Only the creator can delete this group' });
+    }
+
+    await pool.query('DELETE FROM "Group" WHERE id = $1', [groupId]);
+    res.status(204).send();
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error deleting group', details: error.message });
+  }
+});
+
 // CATEGORIES
 app.get('/categories', async (req, res) => {
   try {

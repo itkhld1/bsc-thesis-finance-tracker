@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Plus, ArrowRight, Receipt, Loader2, TrendingUp, TrendingDown, Info } from "lucide-react";
+import { ArrowLeft, Plus, ArrowRight, Receipt, Loader2, TrendingUp, TrendingDown, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,6 +43,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [isAddingExpense, setIsAddingExpense] = useState(false);
@@ -62,6 +64,40 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
       balance: getUserBalance(group, member.id.toString())
     })).sort((a, b) => a.balance - b.balance);
   }, [group]);
+
+  const handleDeleteGroup = async () => {
+    if (!group.id) {
+      toast({ title: "Error", description: "Invalid group ID", variant: "destructive" });
+      return;
+    }
+    
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`http://localhost:5001/groups/${group.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!res.ok) {
+        let errorMessage = "Failed to delete group";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If response is not JSON
+        }
+        throw new Error(errorMessage);
+      }
+      
+      toast({ title: "Group Deleted", description: "The group has been removed successfully." });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      onBack();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleAddMember = async () => {
     if (!memberEmail.trim()) return;
@@ -123,15 +159,49 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">{group.name}</h2>
-          <p className="text-base text-muted-foreground">{group.description}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{group.name}</h2>
+            <p className="text-sm text-slate-500 font-medium">{group.description}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {user?.id === group.createdBy && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 font-bold uppercase tracking-wider text-[10px] h-9 px-4">
+                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                  Delete Group
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the group <span className="font-bold text-slate-900">"{group.name}"</span> and remove all associated expense records. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteGroup} className="bg-rose-600 hover:bg-rose-700 text-white">
+                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Permanently Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <Button size="sm" className="gradient-primary h-9 px-4 font-bold uppercase tracking-wider text-[10px]" onClick={() => setAddExpenseOpen(true)}>
+            <Plus className="w-3.5 h-3.5 mr-2" />
+            Add Expense
+          </Button>
         </div>
       </div>
+
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

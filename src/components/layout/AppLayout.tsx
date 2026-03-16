@@ -1,23 +1,15 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
-import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
     <div className="min-h-screen w-full bg-background">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-      <main
-        className={cn(
-          "min-h-screen transition-all duration-500 ease-in-out bg-slate-50/30",
-          collapsed ? "ml-[80px]" : "ml-[280px]"
-        )}
-      >
+      <Sidebar />
+      <main className="min-h-screen ml-[280px] transition-all duration-500 ease-in-out bg-slate-50/30">
         <div className="p-6 lg:p-10 max-w-[1600px] mx-auto animate-fade-in">
           {children}
         </div>
