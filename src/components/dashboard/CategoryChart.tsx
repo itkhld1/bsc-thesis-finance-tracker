@@ -46,7 +46,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
                 ))}
               </Pie>
                               <Tooltip
-                                formatter={(value: number) => [`₺${value.toFixed(2)}`, ""]}                contentStyle={{
+                                formatter={(value: number, name: string) => [`₺${value.toFixed(2)}`, name]}                contentStyle={{
                   backgroundColor: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "var(--radius)",
