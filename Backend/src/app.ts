@@ -5,7 +5,7 @@ import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { exec } from 'child_process';
 import path from 'path';
 
@@ -61,8 +61,8 @@ pool.connect()
         )
       `);
 
-       // 1. The "Group" table stores the group name and description
-       await client.query(`
+      // 1. The "Group" table stores the group name and description
+      await client.query(`
          CREATE TABLE IF NOT EXISTS "Group" (
            id UUID PRIMARY KEY,
            name TEXT NOT NULL,
@@ -72,8 +72,8 @@ pool.connect()
          )
        `);
 
-       // 2. The "GroupMember" table keeps track of which Users are in which Groups
-       await client.query(`
+      // 2. The "GroupMember" table keeps track of which Users are in which Groups
+      await client.query(`
          CREATE TABLE IF NOT EXISTS "GroupMember" (
            "groupId" UUID REFERENCES "Group"(id) ON DELETE CASCADE,
            "userId" INTEGER REFERENCES "User"(id) ON DELETE CASCADE,
@@ -82,11 +82,35 @@ pool.connect()
          )
        `);
 
-       // 3. This adds a "groupId" tag to your expenses so we know if an expense belongs to a group
-       await client.query('ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "groupId" UUID REFERENCES "Group"(id) ON DELETE SET NULL');
-    } catch (e) {
+      // 3. This adds a "groupId" tag to your expenses so we know if an expense belongs to a group
+      await client.query('ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "groupId" UUID REFERENCES "Group"(id) ON DELETE SET NULL');
+    } catch (e: any) {
       console.log('Database migration log:', e.message);
     }
+
+    // Seed default categories if the table is empty
+    try {
+      const defaultCategories = [
+        { id: 'food',          name: 'Food & Dining',   icon: 'Utensils',      color: 'hsl(var(--chart-1))' },
+        { id: 'transport',     name: 'Transportation',  icon: 'Car',           color: 'hsl(var(--chart-2))' },
+        { id: 'shopping',      name: 'Shopping',        icon: 'ShoppingBag',   color: 'hsl(var(--chart-3))' },
+        { id: 'entertainment', name: 'Entertainment',   icon: 'Gamepad2',      color: 'hsl(var(--chart-4))' },
+        { id: 'utilities',     name: 'Utilities',       icon: 'Zap',           color: 'hsl(var(--chart-5))' },
+        { id: 'health',        name: 'Healthcare',      icon: 'Heart',         color: 'hsl(var(--chart-6))' },
+        { id: 'travel',        name: 'Travel',          icon: 'Plane',         color: 'hsl(var(--chart-8))' },
+        { id: 'other',         name: 'Other',           icon: 'MoreHorizontal',color: 'hsl(var(--chart-7))' },
+      ];
+      for (const cat of defaultCategories) {
+        await client.query(
+          'INSERT INTO "Category" (id, name, icon, color) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+          [cat.id, cat.name, cat.icon, cat.color]
+        );
+      }
+      console.log('Categories seeded.');
+    } catch (e: any) {
+      console.log('Category seed log:', e.message);
+    }
+
     client.release();
   })
   .catch(err => console.error('DB Connection Error:', err.message));
@@ -173,47 +197,47 @@ app.get('/groups', protect, async (req, res) => {
   }
 });
 
- // 2. Create a new group
- app.post('/groups', protect, async (req, res) => {
- const { name, description, memberEmails } = req.body;
- const userId = req.user?.id;
- const groupId = uuidv4();
+// 2. Create a new group
+app.post('/groups', protect, async (req, res) => {
+  const { name, description, memberEmails } = req.body;
+  const userId = req.user?.id;
+  const groupId = uuidv4();
 
- try {
-   // Start a transaction 
-   await pool.query('BEGIN');
+  try {
+    // Start a transaction 
+    await pool.query('BEGIN');
 
-   // A. Insert the group
-   await pool.query(
-     'INSERT INTO "Group" (id, name, description, "createdBy") VALUES ($1, $2, $3, $4)',
-     [groupId, name, description, userId]
-   );
+    // A. Insert the group
+    await pool.query(
+      'INSERT INTO "Group" (id, name, description, "createdBy") VALUES ($1, $2, $3, $4)',
+      [groupId, name, description, userId]
+    );
 
-   // B. Add the creator (you) as a member
-   await pool.query(
-     'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2)',
-     [groupId, userId]
-   );
+    // B. Add the creator (you) as a member
+    await pool.query(
+      'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2)',
+      [groupId, userId]
+    );
 
-   // C. (Optional) Add other members by looking up their emails
-   if (memberEmails && memberEmails.length > 0) {
-     for (const email of memberEmails) {
-       const userRes = await pool.query('SELECT id FROM "User" WHERE email = $1', [email]);
-       if (userRes.rows.length > 0) {
-         await pool.query(
-           'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2) ON CONFLICT DO NOTHING',
-           [groupId, userRes.rows[0].id]
-         );
-       }
-     }
-   }
+    // C. (Optional) Add other members by looking up their emails
+    if (memberEmails && memberEmails.length > 0) {
+      for (const email of memberEmails) {
+        const userRes = await pool.query('SELECT id FROM "User" WHERE email = $1', [email]);
+        if (userRes.rows.length > 0) {
+          await pool.query(
+            'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [groupId, userRes.rows[0].id]
+          );
+        }
+      }
+    }
 
-   await pool.query('COMMIT');
-   res.status(201).json({ id: groupId, name, description });
- } catch (error: any) {
-   await pool.query('ROLLBACK');
-   res.status(500).json({ message: 'Error creating group', details: error.message });
- }
+    await pool.query('COMMIT');
+    res.status(201).json({ id: groupId, name, description });
+  } catch (error: any) {
+    await pool.query('ROLLBACK');
+    res.status(500).json({ message: 'Error creating group', details: error.message });
+  }
 });
 
 
@@ -226,7 +250,7 @@ app.get('/ping', (req, res) => res.json({ message: 'pong', version: '1.1', times
 
 app.get('/debug/routes', (req, res) => {
   const routes: any[] = [];
-  app._router.stack.forEach((middleware: any) => {
+  (app as any)._router.stack.forEach((middleware: any) => {
     if (middleware.route) {
       routes.push(`${Object.keys(middleware.route.methods)} ${middleware.route.path}`);
     }
@@ -283,7 +307,7 @@ app.post('/groups/:id/members', protect, async (req, res) => {
 
 // 4. Delete a group
 app.delete('/groups/:id', protect, async (req, res) => {
-  const groupId = req.params.id;
+  const groupId = String(req.params.id);
   const userId = req.user?.id;
 
   // Basic UUID validation to prevent PG errors
@@ -296,7 +320,7 @@ app.delete('/groups/:id', protect, async (req, res) => {
     // Only the creator can delete the group (optional check, but safer)
     const groupCheck = await pool.query('SELECT "createdBy" FROM "Group" WHERE id = $1', [groupId]);
     if (groupCheck.rows.length === 0) return res.status(404).json({ message: 'Group not found' });
-    
+
     if (groupCheck.rows[0].createdBy !== userId) {
       return res.status(403).json({ message: 'Only the creator can delete this group' });
     }
@@ -322,7 +346,7 @@ app.get('/categories', async (req, res) => {
 app.post('/auth/register', async (req, res) => {
   const { email, password, name, username } = req.body;
   if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
-  
+
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
@@ -366,10 +390,10 @@ app.get('/ai/insights', protect, async (req, res) => {
     console.log(`[AI Insights] Fetched ${expResult.rows.length} expenses`);
     const userResult = await pool.query('SELECT income FROM "User" WHERE id = $1', [userId]);
     console.log(`[AI Insights] Fetched user income: ${userResult.rows[0]?.income}`);
-    
+
     const expenses = expResult.rows || [];
     const income = Number(userResult.rows[0]?.income) || 0;
-    
+
     if (expenses.length === 0) {
       console.log(`[AI Insights] No expenses found for user ${userId}, returning tip`);
       return res.json([
@@ -501,7 +525,7 @@ app.get('/ai/insights', protect, async (req, res) => {
       insights.push({
         type: "tip",
         title: "Subscription Identified",
-        description: `AI detected recurring payments for '${sub[0]}'. You've spent ₺${(sub[1].amounts.reduce((a,b)=>a+b)).toFixed(0)} on this total.`,
+        description: `AI detected recurring payments for '${sub[0]}'. You've spent ₺${(sub[1].amounts.reduce((a, b) => a + b)).toFixed(0)} on this total.`,
         value: `₺${(sub[1].amounts[0]).toFixed(0)}/mo`,
         confidence: 95,
         actionLabel: "Manage"
@@ -526,7 +550,7 @@ app.get('/ai/insights', protect, async (req, res) => {
 
     // Shuffle and limit to 6
     const finalInsights = insights.sort(() => 0.5 - Math.random()).slice(0, 6);
-    
+
     // Ensure we have at least 1-2 default tips if list is short
     if (finalInsights.length < 2 && income > 0) {
       finalInsights.push({
@@ -568,7 +592,7 @@ app.get('/ai/budget-predictions', protect, async (req, res) => {
       [userId]
     );
     const expenses = expResult.rows;
-    
+
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
@@ -592,7 +616,7 @@ app.get('/ai/budget-predictions', protect, async (req, res) => {
       const spentSoFar = currentCatTotals[catId] || 0;
       // Simple velocity prediction: (spent / days_passed) * total_days
       const predictedSpend = Math.round((spentSoFar / dayOfMonth) * daysInMonth);
-      
+
       let riskLevel: "low" | "medium" | "high" = "low";
       let suggestion = "You're doing great! Keep it up.";
 
@@ -657,7 +681,7 @@ app.get('/expenses', protect, async (req, res) => {
          OR (gm."userId" = $1 AND e."groupId" IS NOT NULL)
       ORDER BY e.date DESC
     `, [userId]);
-    
+
     const rawExpenses = result.rows;
     const finalExpenses = [];
 
@@ -669,7 +693,7 @@ app.get('/expenses', protect, async (req, res) => {
           [exp.groupId]
         );
         const count = parseInt(memberCountRes.rows[0].count) || 1;
-        
+
         // 3. The amount shown in the personal list is ONLY the user's share
         const myShare = Number(exp.amount) / count;
 
@@ -736,7 +760,7 @@ app.delete('/expenses/:id', protect, async (req, res) => {
 
 // VOICE PARSING
 const categories_list = [
-  { id: "food", name: "Food" }, { id: "transport", name: "Transport" }, 
+  { id: "food", name: "Food" }, { id: "transport", name: "Transport" },
   { id: "entertainment", name: "Entertainment" }, { id: "shopping", name: "Shopping" },
   { id: "utilities", name: "Utilities" }, { id: "health", name: "Health" },
   { id: "travel", name: "Travel" }, { id: "other", name: "Other" }
@@ -781,7 +805,7 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
   // Strategy A: Look for "TOPLAM", "TUTAR" or "TOTAL" followed by a price format
   // Handles formats like "TOPLAM 756,37" or "TUTAR: 120.00"
   const totalMatch = normalizedText.match(/(toplam|tutar|total|ara toplam|top)\s*[:=]*\s*(\d{1,5}([.,]\d{2})?)/);
-  
+
   if (totalMatch) {
     amount = parseFloat(totalMatch[2].replace(',', '.'));
   } else {
@@ -792,7 +816,7 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
       const prices = priceMatches
         .map((m: string) => parseFloat(m.replace(',', '.')))
         .filter((n: number) => n > 0 && n < 30000); // filter out numbers that are too large --> likely barcodes or ids
-      
+
       if (prices.length > 0) {
         amount = Math.max(...prices);
       }
@@ -844,14 +868,14 @@ app.get('/expenses/history', protect, async (req, res) => {
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
       }
-    }); 
+    });
 
     // convert to array and sort by the key 
     const history = Object.entries(monthlyTotals)
       .map(([monthKey, amount]) => {
         const [year, month] = monthKey.split('-');
         const dateObj = new Date(parseInt(year), parseInt(month) - 1);
-        return { 
+        return {
           monthKey, // "2026-03"
           month: dateObj.toLocaleString('default', { month: 'short' }), // "Mar"
           spent: amount,
@@ -869,7 +893,7 @@ app.get('/expenses/history', protect, async (req, res) => {
 app.get('/expenses/forecast', protect, async (req, res) => {
   const userId = req.user?.id;
   console.log(`[Forecast] Request started for User: ${userId}`);
-  
+
   try {
     const result = await pool.query(
       'SELECT amount, date FROM "Expense" WHERE "userId" = $1 ORDER BY date ASC',
@@ -885,21 +909,21 @@ app.get('/expenses/forecast', protect, async (req, res) => {
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(exp.amount);
       }
-    }); 
+    });
 
     const history = Object.entries(monthlyTotals)
       .map(([month, amount]) => ({ month, amount }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
     const n = history.length;
-    
+
     // aafety check for metadata
     if (n === 0) {
       return res.json({ prediction: 0, trend: "stable", confidence: 0, historyCount: 0 });
     }
 
     if (n < 2) {
-      return res.json({ 
+      return res.json({
         prediction: history[0].amount,
         trend: "neutral",
         confidence: 30,
@@ -909,7 +933,7 @@ app.get('/expenses/forecast', protect, async (req, res) => {
     }
 
     const amounts = history.map(h => h.amount);
-    const lastAmount = amounts[n-1];
+    const lastAmount = amounts[n - 1];
     let prediction = 0;
     let usedFallback = false;
 
@@ -925,7 +949,7 @@ app.get('/expenses/forecast', protect, async (req, res) => {
       prediction = Math.max(lastAmount * 0.7, lastAmount + avgGrowthPerMonth);
       console.log(`[Forecast] AI failed or gave 0, using Trend Fallback: ₺${prediction}`);
     }
-    
+
     const trend = prediction > lastAmount ? "increasing" : prediction < lastAmount ? "decreasing" : "stable";
     const confidence = Math.min(95, 40 + (n * 8));
 
@@ -944,26 +968,26 @@ app.get('/expenses/forecast', protect, async (req, res) => {
 });
 
 // AI INSIGHTS & RECOMMENDATIONS
-async function predictWithLSTM(data:number[]) {
+async function predictWithLSTM(data: number[]) {
   const n = data.length;
   if (n < 2) return data[0] || 0;
 
   //  normalization with padding
-  const max = Math.max(...data) * 1.5; 
+  const max = Math.max(...data) * 1.5;
   const min = Math.min(...data) * 0.5;
-  const range = max - min || 1; 
+  const range = max - min || 1;
   const normalizedData = data.map(val => (val - min) / range);
 
   // prepare Tensors
-  const xs = [];
-  const ys = [];
+  const xs: number[][][] = [];
+  const ys: number[] = [];
   for (let i = 0; i < n - 1; i++) {
-    xs.push([normalizedData[i]]); 
+    xs.push([[normalizedData[i]]]);
     ys.push(normalizedData[i + 1]);
   }
 
-  const tensorXs = tf.tensor3d(xs, [xs.length, 1, 1]);
-  const tensorYs = tf.tensor2d(ys, [ys.length, 1]);
+  const tensorXs = tf.tensor(xs, [xs.length, 1, 1]) as tf.Tensor3D;
+  const tensorYs = tf.tensor(ys, [ys.length, 1]) as tf.Tensor2D;
 
   // Dynamic Model Selection
   // LSTM needs more data to be stable. For < 5 months, SimpleRNN is safer.
@@ -974,7 +998,7 @@ async function predictWithLSTM(data:number[]) {
     model.add(tf.layers.lstm({ units: 32, inputShape: [1, 1] }));
   }
   model.add(tf.layers.dense({ units: 1 }));
-  
+
   model.compile({ optimizer: tf.train.adam(0.02), loss: 'meanSquaredError' });
 
   //  Training
@@ -994,17 +1018,17 @@ async function predictWithLSTM(data:number[]) {
 // gradient boosted tree
 app.get('/budget/optimize', protect, async (req, res) => {
   const userId = req.user?.id;
-  
+
   try {
     // Fetch the latest income directly from the DB
     const userRes = await pool.query('SELECT income FROM "User" WHERE id = $1', [userId]);
     const userIncome = Number(userRes.rows[0]?.income) || 5000;
-    
+
     console.log(`[AI Optimizer] Running for User ${userId} with Income: ${userIncome}`);
-    
-    const scriptPath = path.join(__dirname, '../../aura-finance-ai/optimize.py');
-    
-    exec(`python3 ${scriptPath} ${userIncome}`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
+
+    const scriptPath = path.join(__dirname, '../../AI/optimize.py');
+
+    exec(`python "${scriptPath}" ${userIncome}`, { cwd: path.join(__dirname, '../../AI') }, (error, stdout, stderr) => {
       if (error) {
         console.error(`Exec error: ${error}`);
         return res.status(500).json({ message: "AI Optimization failed" });
@@ -1012,11 +1036,11 @@ app.get('/budget/optimize', protect, async (req, res) => {
 
       try {
         const rawAiResult = JSON.parse(stdout);
-        
+
         // Clean and map Kaggle 10 categories to App 8 categories
         const mappedResults: Record<string, number> = {
           food: rawAiResult["Food & Drink"] || 0,
-          transport: (rawAiResult["Travel"] || 0) * 0.4, 
+          transport: (rawAiResult["Travel"] || 0) * 0.4,
           entertainment: rawAiResult["Entertainment"] || 0,
           shopping: rawAiResult["Shopping"] || 0,
           utilities: (rawAiResult["Utilities"] || 0) + (rawAiResult["Rent"] || 0),
