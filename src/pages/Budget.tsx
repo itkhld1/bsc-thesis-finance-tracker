@@ -8,6 +8,7 @@ import { CategoryBudgetCard } from "@/components/budget/CategoryBudgetCard";
 import { BudgetChart } from "@/components/budget/BudgetChart";
 import { SpendingTrendChart } from "@/components/budget/SpendingTrendChart";
 import { EditBudgetDialog } from "@/components/budget/EditBudgetDialog";
+import { ManageBudgetsDialog } from "@/components/budget/ManageBudgetsDialog";
 import { AIBudgetPredictions } from "@/components/ai/AIBudgetPredictions";
 import { AIBudgetOptimizer } from "@/components/budget/AIBudgetOptimizer";
 import { mockBudgetCategories, BudgetCategory } from "@/data/budgetData";
@@ -32,6 +33,7 @@ export default function Budget() {
   
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
 
   // 1. Fetch real Budget Limits from Backend
   useEffect(() => {
@@ -101,6 +103,28 @@ export default function Budget() {
       });
     } catch (e) {
       toast({ title: "Error", description: "Failed to save budget to server", variant: "destructive" });
+    }
+  };
+
+  const handleSaveAllBudgets = async (budgets: { categoryId: string, limitAmount: number }[]) => {
+    // Optimistic UI update
+    setCategories(prev => prev.map(cat => {
+      const match = budgets.find(b => b.categoryId === cat.id);
+      return match ? { ...cat, allocated: match.limitAmount } : cat;
+    }));
+
+    // Save to DB
+    try {
+      const res = await fetch('http://localhost:5001/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ budgets })
+      });
+      if (res.ok) {
+        toast({ title: "Success", description: "All budgets updated successfully." });
+      }
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to save all budgets", variant: "destructive" });
     }
   };
 
@@ -189,7 +213,14 @@ export default function Budget() {
               onClick={() => document.getElementById('ai-optimize-trigger')?.click()}>
               <Sparkles className="h-4 w-4" /> Optimize with AI
             </Button>
-            <Button variant="outline" size="sm" className="gap-2"><Settings2 className="h-4 w-4" /> Manage</Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setManageDialogOpen(true)}
+            >
+              <Settings2 className="h-4 w-4" /> Manage
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -209,6 +240,7 @@ export default function Budget() {
       </div>
 
       <EditBudgetDialog category={editingCategory} open={dialogOpen} onOpenChange={setDialogOpen} onSave={handleSaveBudget} />
+      <ManageBudgetsDialog categories={categories} open={manageDialogOpen} onOpenChange={setManageDialogOpen} onSave={handleSaveAllBudgets} />
     </div>
   );
 }
