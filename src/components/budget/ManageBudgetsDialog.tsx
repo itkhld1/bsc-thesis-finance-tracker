@@ -65,8 +65,8 @@ export function ManageBudgetsDialog({ categories, open, onOpenChange, onSave }: 
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4 py-4">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto pr-2 min-h-0">
+          <div className="space-y-6 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {categories.map((cat) => {
                 const IconComponent = iconMap[cat.icon] || CreditCard;
@@ -105,7 +105,7 @@ export function ManageBudgetsDialog({ categories, open, onOpenChange, onSave }: 
               })}
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="pt-4 border-t border-border mt-2">
           <div className="flex items-center justify-between mb-4 bg-primary/5 p-3 rounded-lg border border-primary/10">
