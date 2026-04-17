@@ -8,6 +8,12 @@ import { v4 as uuidv4 } from 'uuid';
 import * as tf from '@tensorflow/tfjs-node';
 import { exec } from 'child_process';
 import path from 'path';
+import util from 'util';
+
+// Polyfill util.isNullOrUndefined for older libraries in Node 25+
+if (!(util as any).isNullOrUndefined) {
+  (util as any).isNullOrUndefined = (value: any) => value === null || value === undefined;
+}
 
 dotenv.config();
 
@@ -725,6 +731,23 @@ app.put('/expenses/:id', protect, async (req, res) => {
   }
 });
 
+app.post('/expenses/delete-batch', protect, async (req, res) => {
+  const { ids } = req.body;
+  console.log(`[Batch Delete] Request for user ${req.user?.id}, IDs:`, ids);
+  
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Invalid or empty IDs list' });
+  }
+  try {
+    const result = await pool.query('DELETE FROM "Expense" WHERE id = ANY($1) AND "userId" = $2', [ids, req.user?.id]);
+    console.log(`[Batch Delete] Successfully deleted ${result.rowCount} rows`);
+    res.status(204).send();
+  } catch (error: any) {
+    console.error(`[Batch Delete] Error:`, error);
+    res.status(500).json({ message: 'Batch delete error', details: error.message });
+  }
+});
+
 app.delete('/expenses/:id', protect, async (req, res) => {
   try {
     await pool.query('DELETE FROM "Expense" WHERE id=$1 AND "userId"=$2', [req.params.id, req.user?.id]);
@@ -941,14 +964,24 @@ async function predictWithLSTM(data: number[]) {
   console.log(`[LSTM Engine] Input size: ${n}`);
 
   // 1. Minimum data requirements - adaptive windowing
-  if (n < 2) return (data[0] || 0) * 1.05; // 5% growth guess for 1 data point
+  if (n < 2) return (data[n - 1] || 0) * 1.05;
 
-  const windowSize = Math.min(Math.max(1, n - 1), 3);
+  // With 26 data points, we can use a window size of 6 (half a year)
+  // Otherwise, we scale window size based on available data
+  let windowSize = 3;
+  if (n >= 12) windowSize = 6;
+  if (n >= 40) windowSize = 12; // Yearly context for large data
+  windowSize = Math.min(windowSize, n - 1);
+  
   console.log(`[LSTM Engine] Using windowSize: ${windowSize}`);
 
-  // 2. Normalization (Strict 0.1 - 0.9 range for LSTM stability)
-  const max = Math.max(...data) * 1.2;
-  const min = Math.min(...data) * 0.8;
+  // 2. Normalization (Min-Max with padding for future growth)
+  const currentMax = Math.max(...data);
+  const currentMin = Math.min(...data);
+  const padding = (currentMax - currentMin) * 0.2 || currentMax * 0.1 || 10;
+  
+  const max = currentMax + padding;
+  const min = Math.max(0, currentMin - padding);
   const range = max - min || 1;
   const normalizedData = data.map(val => (val - min) / range);
 
@@ -961,9 +994,8 @@ async function predictWithLSTM(data: number[]) {
     ys.push(normalizedData[i + windowSize]);
   }
 
-  // Ensure we have at least one sample to train on
   if (xs.length === 0) {
-    console.log(`[LSTM Engine] Not enough samples for training, returning last + trend`);
+    console.log(`[LSTM Engine] Not enough samples for training, returning trend-based guess`);
     return data[n - 1] * (data[n - 1] / (data[0] || 1));
   }
 
@@ -975,24 +1007,30 @@ async function predictWithLSTM(data: number[]) {
     tensorXs = tf.tensor3d(xs, [xs.length, windowSize, 1]);
     tensorYs = tf.tensor2d(ys, [ys.length, 1]);
 
-    // 4. Compact Model Architecture for Small Data
+    // 4. Robust Model Architecture
     model = tf.sequential();
+    // LSTM layer with dropout for regularization
     model.add(tf.layers.lstm({
-      units: 16, // Reduced units for stability with small data
+      units: 32,
       inputShape: [windowSize, 1],
-      activation: 'tanh'
+      activation: 'tanh',
+      recurrentActivation: 'sigmoid',
+      dropout: 0.1
     }));
-    model.add(tf.layers.dense({ units: 8, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 1 }));
+    
+    model.add(tf.layers.dense({ units: 16, activation: 'relu' }));
+    // Sigmoid output to keep prediction within our [min, max] range safely
+    model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
 
     model.compile({
-      optimizer: tf.train.adam(0.001), // Lower learning rate
+      optimizer: tf.train.adam(0.005), // Slightly higher LR for faster convergence on small data
       loss: 'meanSquaredError'
     });
 
     // 5. Training
+    // Small data = more epochs needed to learn patterns
     await model.fit(tensorXs, tensorYs, {
-      epochs: 150, // Reduced epochs
+      epochs: 200,
       verbose: 0,
       shuffle: true
     });
@@ -1003,7 +1041,14 @@ async function predictWithLSTM(data: number[]) {
     const predictionTensor = model.predict(input) as tf.Tensor;
     const result = await predictionTensor.data();
 
-    const finalValue = (result[0] * range) + min;
+    // Denormalize
+    let finalValue = (result[0] * range) + min;
+
+    // Sanity check: Prediction shouldn't be negative or wildly unrealistic
+    finalValue = Math.max(0, finalValue);
+    
+    // Safety: If LSTM predicts something crazy (e.g. > 3x current max), cap it
+    if (finalValue > currentMax * 3) finalValue = currentMax * 1.5;
 
     // Cleanup
     tf.dispose([input, predictionTensor]);
