@@ -3,50 +3,55 @@ import xgboost as xgb
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.model_selection import train_test_split
 import joblib
+import os
 
-# Load the dataset
-df = pd.read_csv('Personal_Finance_Dataset.csv')
+# 1. Load the new Indian Finance Dataset
+dataset_path = 'Indian_Finance_Dataset.csv'
+if not os.path.exists(dataset_path):
+    # Fallback if the script is run from a different directory
+    dataset_path = 'aura-finance-ai/Indian_Finance_Dataset.csv'
 
-# Convert Date
-df['Date'] = pd.to_datetime(df['Date'])
-df['Month_Year'] = df['Date'].dt.to_period('M')
+df = pd.read_csv(dataset_path)
 
-# Pivot the data to get one row per month
-# This creates columns like 'Food & Drink', 'Utilities', 'Rent', etc.
-pivot_df = df.pivot_table(
-    index='Month_Year',
-    columns='Category',
-    values='Amount',
-    aggfunc='sum'
-).fillna(0)
+# 2. Map the dataset columns to Aura Finance App categories
+# We combine some columns to match the 8 categories in the UI
+processed_df = pd.DataFrame()
+processed_df['Total_Income'] = df['Income']
 
-# Calculate Total Monthly Income
-monthly_income = df[df['Type'] == 'Income'].groupby('Month_Year')['Amount'].sum()
-pivot_df['Total_Income'] = monthly_income
-pivot_df['Total_Income'] = pivot_df['Total_Income'].fillna(monthly_income.mean())
+# Mapping logic:
+processed_df['food'] = df['Groceries'] + df['Eating_Out']
+processed_df['transport'] = df['Transport']
+processed_df['shopping'] = df['Loan_Repayment'] + df['Insurance'] # Grouping fixed financial shopping/commitments
+processed_df['entertainment'] = df['Entertainment']
+processed_df['utilities'] = df['Rent'] + df['Utilities']
+processed_df['health'] = df['Healthcare']
+processed_df['travel'] = df['Income'] * 0.05 # The dataset lacks a 'Travel' column, so we assume a 5% allocation rule
+processed_df['other'] = df['Miscellaneous'] + df['Education']
 
-# Define Features (X) and Targets (y)
-# X: We only use 'Total_Income' to decide the budget for everything else
-X = pivot_df[['Total_Income']]
+# 3. Define Features (X) and Targets (y)
+X = processed_df[['Total_Income']]
+target_cols = ['food', 'transport', 'shopping', 'entertainment', 'utilities', 'health', 'travel', 'other']
+y = processed_df[target_cols]
 
-# y: All category columns (excluding Total_Income itself)
-target_cols = [col for col in pivot_df.columns if col != 'Total_Income']
-y = pivot_df[target_cols]
-
-# Train the Multi-Output Gradient Boosted Tree
-# We use MultiOutputRegressor because XGBoost usually predicts one number at a time.
-# This wrapper allows it to predict ALL category budgets at once.
+# 4. Train the Model (Multi-Output XGBoost)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-base_model = xgb.XGBRegressor(n_estimators=100, learning_rate=0.1, max_depth=5)
+# Using slightly more robust parameters for the larger dataset
+base_model = xgb.XGBRegressor(
+    n_estimators=200, 
+    learning_rate=0.05, 
+    max_depth=6, 
+    subsample=0.8,
+    colsample_bytree=0.8
+)
 model = MultiOutputRegressor(base_model)
 
+print(f"Starting training on {len(df)} records...")
 model.fit(X_train, y_train)
 
-# Save the Model and the List of Categories
-# We need to save the category names so the Node.js backend knows which number is which!
+# 5. Save the new Model and Categories
 joblib.dump(model, 'budget_optimizer_model.pkl')
 joblib.dump(target_cols, 'category_names.pkl')
 
-print(f"Success! Trained on {len(pivot_df)} months of data.")
-print(f"Model can now optimize these categories: {target_cols}")
+print("Success! Model retrained with the new Indian Finance Dataset.")
+print(f"Categories supported: {target_cols}")

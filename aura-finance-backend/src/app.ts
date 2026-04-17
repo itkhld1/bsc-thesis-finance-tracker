@@ -1041,19 +1041,32 @@ app.get('/budget/optimize', protect, async (req, res) => {
       try {
         const rawAiResult = JSON.parse(stdout);
         
-        // Clean and map Kaggle 10 categories to App 8 categories
-        const mappedResults: Record<string, number> = {
-          food: rawAiResult["Food & Drink"] || 0,
-          transport: (rawAiResult["Travel"] || 0) * 0.4, 
-          entertainment: rawAiResult["Entertainment"] || 0,
-          shopping: rawAiResult["Shopping"] || 0,
-          utilities: (rawAiResult["Utilities"] || 0) + (rawAiResult["Rent"] || 0),
-          health: rawAiResult["Health & Fitness"] || 0,
-          travel: (rawAiResult["Travel"] || 0) * 0.6,
-          other: rawAiResult["Other"] || 0
+        // 1. Direct Mapping: The model now outputs exact app category IDs!
+        // We ensure we handle any potential undefined values
+        const essentials: Record<string, number> = {
+          food: Math.round(rawAiResult["food"] || 0),
+          transport: Math.round(rawAiResult["transport"] || 0), 
+          entertainment: Math.round(rawAiResult["entertainment"] || 0),
+          shopping: Math.round(rawAiResult["shopping"] || 0),
+          utilities: Math.round(rawAiResult["utilities"] || 0),
+          health: Math.round(rawAiResult["health"] || 0),
+          travel: Math.round(rawAiResult["travel"] || 0),
+          other: Math.round(rawAiResult["other"] || 0)
         };
 
-        res.json(mappedResults);
+        // 2. Safety Check: Ensure a 15% Savings Goal
+        const targetTotalSpend = userIncome * 0.85; 
+        const sumTotal = Object.values(essentials).reduce((a, b) => a + b, 0);
+        
+        // If the AI suggests spending more than 85% of income, scale it down
+        if (sumTotal > targetTotalSpend) {
+          const scaleFactor = targetTotalSpend / sumTotal;
+          Object.keys(essentials).forEach(key => {
+            essentials[key] = Math.round(essentials[key] * scaleFactor);
+          });
+        }
+
+        res.json(essentials);
       } catch (e) {
         res.status(500).json({ message: "Failed to parse AI result" });
       }
