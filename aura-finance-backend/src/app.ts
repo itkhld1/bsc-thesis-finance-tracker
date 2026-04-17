@@ -1019,20 +1019,32 @@ async function predictWithLSTM(data: number[]) {
   }
 }
 
-// gradient boosted tree
+// gradient boosted tree - Hybrid Personalized Model
 app.get('/budget/optimize', protect, async (req, res) => {
   const userId = req.user?.id;
   
   try {
-    // Fetch the latest income directly from the DB
+    // 1. Fetch the latest income directly from the DB
     const userRes = await pool.query('SELECT income FROM "User" WHERE id = $1', [userId]);
     const userIncome = Number(userRes.rows[0]?.income) || 5000;
+
+    // 2. Fetch recent spending patterns (Last 3 months average)
+    const expResult = await pool.query(`
+      SELECT "categoryId", amount, date FROM "Expense" 
+      WHERE "userId" = $1 AND date >= (CURRENT_DATE - INTERVAL '3 months')
+    `, [userId]);
+
+    const actuals: Record<string, number> = {};
+    expResult.rows.forEach(e => {
+      actuals[e.categoryId] = (actuals[e.categoryId] || 0) + (Number(e.amount) / 3);
+    });
     
-    console.log(`[AI Optimizer] Running for User ${userId} with Income: ${userIncome}`);
+    console.log(`[AI Hybrid Optimizer] Running for User ${userId}`);
     
     const scriptPath = path.join(__dirname, '../../aura-finance-ai/optimize.py');
+    const actualsJson = JSON.stringify(actuals).replace(/"/g, '\\"');
     
-    exec(`python3 ${scriptPath} ${userIncome}`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
+    exec(`python3 ${scriptPath} ${userIncome} "${actualsJson}"`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
       if (error) {
         console.error(`Exec error: ${error}`);
         return res.status(500).json({ message: "AI Optimization failed" });
@@ -1041,8 +1053,7 @@ app.get('/budget/optimize', protect, async (req, res) => {
       try {
         const rawAiResult = JSON.parse(stdout);
         
-        // 1. Direct Mapping: The model now outputs exact app category IDs!
-        // We ensure we handle any potential undefined values
+        // Final Direct Mapping
         const essentials: Record<string, number> = {
           food: Math.round(rawAiResult["food"] || 0),
           transport: Math.round(rawAiResult["transport"] || 0), 
@@ -1054,11 +1065,10 @@ app.get('/budget/optimize', protect, async (req, res) => {
           other: Math.round(rawAiResult["other"] || 0)
         };
 
-        // 2. Safety Check: Ensure a 15% Savings Goal
+        // Safety Check: Maintain 15% Savings Goal
         const targetTotalSpend = userIncome * 0.85; 
         const sumTotal = Object.values(essentials).reduce((a, b) => a + b, 0);
         
-        // If the AI suggests spending more than 85% of income, scale it down
         if (sumTotal > targetTotalSpend) {
           const scaleFactor = targetTotalSpend / sumTotal;
           Object.keys(essentials).forEach(key => {

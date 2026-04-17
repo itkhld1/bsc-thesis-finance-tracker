@@ -4,31 +4,40 @@ import pandas as pd
 import json
 
 def main():
-    # Get Income from command line argument
+    # 1. Parse Inputs: [1] Income, [2] JSON string of current spending
     try:
         user_income = float(sys.argv[1])
-    except:
-        print(json.dumps({"error": "No income provided"}))
+        current_spending = {}
+        if len(sys.argv) > 2:
+            current_spending = json.loads(sys.argv[2])
+    except Exception as e:
+        print(json.dumps({"error": f"Invalid input: {str(e)}"}))
         return
 
-    # Load the trained model and category names
-    model = joblib.load('budget_optimizer_model.pkl')
-    categories = joblib.load('category_names.pkl')
+    # 2. Load the trained model and category names
+    try:
+        model = joblib.load('budget_optimizer_model.pkl')
+        categories = joblib.load('category_names.pkl')
+    except:
+        # Fallback for different execution contexts
+        model = joblib.load('aura-finance-ai/budget_optimizer_model.pkl')
+        categories = joblib.load('aura-finance-ai/category_names.pkl')
 
-    # Create input for the model
-    # The model expects a DataFrame with the column 'Total_Income'
+    # 3. Get the "Ideal" prediction from Kaggle data
     input_df = pd.DataFrame([[user_income]], columns=['Total_Income'])
-
-    # Predict (Inference)
     predictions = model.predict(input_df)[0]
 
-    # Format results as JSON
-    # We round the numbers to 2 decimal places
     results = {}
     for cat, pred in zip(categories, predictions):
-        results[cat] = round(float(pred), 2)
+        ideal_val = float(pred)
+        actual_val = float(current_spending.get(cat, ideal_val))
+        
+        # HYBRID LOGIC: 70% Ideal (Financial Coach) + 30% Actual (Personalization)
+        # This nudges the user toward better habits without being unrealistic
+        hybrid_val = (ideal_val * 0.7) + (actual_val * 0.3)
+        
+        results[cat] = round(hybrid_val, 2)
 
-    # Print the JSON result (Node.js will read this)
     print(json.dumps(results))
 
 if __name__ == "__main__":
