@@ -57,16 +57,37 @@ export default function Dashboard() {
   const monthlyIncome = Number(user?.income) || 0; 
   const monthIdx = months.indexOf(selectedMonth);
   
+  // Current Month Data
   const currentMonthExpenses = expenses?.filter(e => {
     const d = new Date(e.date);
     return d.getMonth() === monthIdx && d.getFullYear() === selectedYear;
   }) || [];
-
   const monthlyExpensesTotal = currentMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
 
-  const totalExpenses = expenses?.reduce((acc, e) => acc + e.amount, 0) || 0;
-  const totalBalance = monthlyIncome - totalExpenses; 
+  // Previous Month Data for Trends
+  const prevMonthIdx = monthIdx === 0 ? 11 : monthIdx - 1;
+  const prevYear = monthIdx === 0 ? selectedYear - 1 : selectedYear;
+  const prevMonthExpenses = expenses?.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === prevMonthIdx && d.getFullYear() === prevYear;
+  }) || [];
+  const prevMonthlyExpensesTotal = prevMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
+
+  // Metrics
+  const netCashFlow = monthlyIncome - monthlyExpensesTotal;
   const savingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - monthlyExpensesTotal) / monthlyIncome) * 100) : 0;
+  
+  // Trend Calculations
+  const calculateTrend = (current: number, previous: number) => {
+    if (previous === 0) return 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  const expenseTrend = calculateTrend(monthlyExpensesTotal, prevMonthlyExpensesTotal);
+  
+  const prevSavingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - prevMonthlyExpensesTotal) / monthlyIncome) * 100) : 0;
+  const savingsTrend = savingsRate - prevSavingsRate; // Direct point change is better for rates
+
   // --- END REAL-TIME CALCULATIONS ---
 
   const getAggregatedCategoryData = (): ChartCategoryData[] => {
@@ -173,10 +194,11 @@ export default function Dashboard() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <SummaryCard
-          title="Total Balance"
-          value={`₺${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          title="Net Cash Flow"
+          value={`₺${netCashFlow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={Wallet}
-          variant="primary"
+          variant={netCashFlow >= 0 ? "primary" : "warning"}
+          description={netCashFlow >= 0 ? "Surplus this month" : "Deficit this month"}
         />
         <SummaryCard
           title="Monthly Income"
@@ -188,13 +210,13 @@ export default function Dashboard() {
           title="Monthly Expenses"
           value={`₺${monthlyExpensesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={TrendingDown}
-          trend={{ value: 0, isPositive: true }}
+          trend={prevMonthlyExpensesTotal > 0 ? { value: expenseTrend, isPositive: expenseTrend < 0 } : undefined}
         />
         <SummaryCard
           title="Savings Rate"
           value={`${savingsRate}%`}
           icon={PiggyBank}
-          trend={{ value: 0, isPositive: true }}
+          trend={prevMonthlyExpensesTotal > 0 ? { value: savingsTrend, isPositive: savingsTrend > 0 } : undefined}
         />
       </div>
 

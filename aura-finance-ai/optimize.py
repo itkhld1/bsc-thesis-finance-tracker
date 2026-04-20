@@ -4,7 +4,7 @@ import pandas as pd
 import json
 
 def main():
-    # 1. Parse Inputs: [1] Income, [2] JSON string of current spending
+    # take the montly income as first input and the current spending as second input 
     try:
         user_income = float(sys.argv[1])
         current_spending = {}
@@ -14,16 +14,15 @@ def main():
         print(json.dumps({"error": f"Invalid input: {str(e)}"}))
         return
 
-    # 2. Load the trained model and category names
+    # load the trained model and category names
     try:
         model = joblib.load('budget_optimizer_model.pkl')
         categories = joblib.load('category_names.pkl')
     except:
-        # Fallback for different execution contexts
         model = joblib.load('aura-finance-ai/budget_optimizer_model.pkl')
         categories = joblib.load('aura-finance-ai/category_names.pkl')
 
-    # 3. Get the "Ideal" prediction from Kaggle data
+    # get the 'Ideal' prediction from dataset
     input_df = pd.DataFrame([[user_income]], columns=['Total_Income'])
     predictions = model.predict(input_df)[0]
 
@@ -32,8 +31,8 @@ def main():
         ideal_val = float(pred)
         actual_val = float(current_spending.get(cat, ideal_val))
         
-        # HYBRID LOGIC: 70% Ideal (Financial Coach) + 30% Actual (Personalization)
-        # This nudges the user toward better habits without being unrealistic
+        # hybrid logic: 70% Ideal + 30% Actual
+        # this nudges the user toward better habits without being unrealistic
         hybrid_val = (ideal_val * 0.7) + (actual_val * 0.3)
         
         results[cat] = round(hybrid_val, 2)

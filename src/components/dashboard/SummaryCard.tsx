@@ -6,6 +6,7 @@ interface SummaryCardProps {
   title: string;
   value: string;
   icon: LucideIcon;
+  description?: string;
   trend?: {
     value: number;
     isPositive: boolean;
@@ -21,7 +22,7 @@ const variantStyles = {
   warning: "bg-warning text-warning-foreground",
 };
 
-export function SummaryCard({ title, value, icon: Icon, trend, variant = "default", action }: SummaryCardProps) {
+export function SummaryCard({ title, value, icon: Icon, description, trend, variant = "default", action }: SummaryCardProps) {
   const isPrimary = variant !== "default";
 
   return (
@@ -42,6 +43,14 @@ export function SummaryCard({ title, value, icon: Icon, trend, variant = "defaul
               {action && action}
             </div>
             <p className="text-2xl lg:text-3xl font-bold tracking-tight">{value}</p>
+            {description && (
+               <p className={cn(
+                "text-[10px] uppercase font-bold tracking-widest leading-none",
+                isPrimary ? "text-white/60" : "text-muted-foreground"
+              )}>
+                {description}
+              </p>
+            )}
             {trend && (
               <p className={cn(
                 "text-sm font-medium flex items-center gap-1",
@@ -49,7 +58,7 @@ export function SummaryCard({ title, value, icon: Icon, trend, variant = "defaul
                   ? "text-current/80"
                   : trend.isPositive ? "text-success" : "text-destructive"
               )}>
-                {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
+                {trend.value > 0 ? "↑" : "↓"} {Math.abs(trend.value)}%
                 <span className={isPrimary ? "text-current/60" : "text-muted-foreground"}>vs last month</span>
               </p>
             )}
