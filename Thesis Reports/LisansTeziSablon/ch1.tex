@@ -1,0 +1,24 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{GİRİŞ}\label{giris}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Günümüzde bireysel finans yönetimi, artan yaşam maliyetleri ve harcama kanallarının çeşitlenmesi nedeniyle bireyler için karmaşık bir süreç haline gelmiştir. Finansal okuryazarlığın önemi artarken, kullanıcıların harcamalarını sadece kaydetmekle kalmayıp, bu verilerden anlamlı içgörüler çıkaran akıllı sistemlere olan ihtiyacı da artmaktadır. Bu tez çalışması, geleneksel gider takip yöntemlerini yapay zekâ (YZ) ve makine öğrenmesi (MÖ) teknikleriyle birleştirerek akıllı bir kişisel finans takip sistemi sunmaktadır.
+
+\section{Tezin Amacı}\label{tezinamaci}
+
+Bu tezin temel amacı, kullanıcıların finansal davranışlarını analiz eden, gelecek harcamalarını tahminleyen ve veri odaklı bütçe optimizasyonu sunan uçtan uca bir web uygulaması geliştirmektir. Proje kapsamında aşağıdaki temel hedeflere odaklanılmıştır:
+
+\begin{itemize}
+    \item \textbf{Akıllı Tahminleme:} Kullanıcının geçmiş verilerini kullanarak LSTM (Long Short-Term Memory) ve SimpleRNN gibi derin öğrenme modelleriyle gelecek aylardaki harcama miktarını öngörmek.
+    \item \textbf{Veri Odaklı Bütçe Optimizasyonu:} Çok çıktılı XGBoost (Extreme Gradient Boosting) regresyon modelleri kullanarak kullanıcının gelirine ve demografik özelliklerine en uygun bütçe dağılımını önermek.
+    \item \textbf{Kullanıcı Deneyimi ve Erişilebilirlik:} Sesli komutlarla işlem girişi (NLP) ve OCR (Optik Karakter Tanıma) ile fatura tarama özelliklerini entegre ederek manuel veri girişi yükünü azaltmak.
+    \item \textbf{Grup Harcama Yönetimi:} Ortak harcamaların adil ve şeffaf bir şekilde yönetilmesini sağlayan bir altyapı oluşturmak.
+\end{itemize}
+
+\section{Projenin Önemi}\label{projeninonemi}
+
+Mevcut finans uygulamalarının çoğu pasif kayıt tutma araçlarıdır. Bu proje, hibrit bir yapay zekâ mimarisi kullanarak proaktif bir finansal danışman rolü üstlenmektedir. Node.js üzerinde çalışan TensorFlow.js ile gerçek zamanlı tahminler sunarken, Python tabanlı XGBoost modelleri ile karmaşık optimizasyon işlemleri gerçekleştirmesi, sistemin teknolojik olarak özgün bir konumda olmasını sağlamaktadır.
+
+\section{Kapsam ve Sınırlılıklar}\label{kapsam}
+
+Proje; React tabanlı bir ön yüz, Node.js ve Express tabanlı bir arka yüz ve Python tabanlı bir yapay zekâ motorundan oluşmaktadır. Verilerin saklanması için PostgreSQL veritabanı ve Prisma ORM kullanılmıştır. Çalışmanın kapsamı, bireysel ve grup harcama takibi, bütçe optimizasyonu, sesli işlem girişi ve görsel veri analizleri ile sınırlandırılmıştır. 

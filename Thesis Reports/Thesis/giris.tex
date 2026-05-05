@@ -1,0 +1,84 @@
+% ---------------------------------------------------------
+% 1. BÖLÜM - GİRİŞ
+% ---------------------------------------------------------
+\chapter{GİRİŞ}
+
+\section{Problem Tanımı}
+
+Günümüzde bireysel finans yönetimi, artan yaşam maliyetleri, çeşitlenen harcama kanalları ve karmaşık finansal ürünler nedeniyle önemli bir zorluk haline gelmiştir. Dünya Bankası verilerine göre, gelişmekte olan ülkelerdeki bireylerin \%60'ından fazlası düzenli bir bütçe takibi yapmamakta ve bu durum finansal kırılganlığa yol açmaktadır. Türkiye'de de benzer bir eğilim görülmekte olup, TÜİK 2023 verilerine göre hanehalkı borçluluk oranı son beş yılda yaklaşık \%40 artış göstermiştir .
+
+Geleneksel finans yönetimi yöntemleri çoğunlukla manuel kayıt tutma, elektronik tablo yazılımları veya sınırlı işlevselliğe sahip mobil uygulamaların kullanımına dayanmaktadır. Bununla birlikte, bu yöntemler zaman alıcı, hata yapmaya açık ve kullanıcı motivasyonunu düşüren süreçler içermektedir. Özellikle günlük küçük harcamaların kaydedilmemesi, bütçe planlamasında önemli sapmalara neden olmaktadır. Yapılan araştırmalar, bireylerin yaklaşık \%70'inin küçük harcamalarını takip etmediğini ve aylık harcamalarını ortalama \%30 oranında olduğundan fazla tahmin ettiğini göstermektedir.
+
+Mevcut piyasada bulunan kişisel finans uygulamaları çoğunlukla pasif kayıt tutma araçları olarak tasarlanmakta; proaktif öneri sunma, finansal davranış analizi yapma veya geleceğe yönelik tahminleme gibi işlevlerde yetersiz kalmaktadır. Özellikle arkadaş grupları, ev arkadaşları veya aile bireyleri arasında gerçekleştirilen ortak harcamaların adil paylaşımı hâlâ yaygın bir sosyal ve finansal sorun olarak varlığını sürdürmektedir.
+
+Ses tabanlı etkileşim teknolojilerinin günlük yaşama hızla entegre olmasına rağmen, kişisel finans uygulamalarında bu teknolojilerin kullanım alanı oldukça sınırlıdır. Kullanıcılar harcamaları kaydetmek için genellikle birden fazla ekran arasında gezinmek ve bilgileri manuel olarak girmek zorunda kalmaktadır. Bu durum, finans yönetimi sürecini zorlaştırmakta ve sürdürülebilir kullanım alışkanlığı oluşmasını engellemektedir.
+
+\section{Projenin Amacı ve Hedefleri}
+
+Bu çalışmanın temel amacı, yapay zekâ ve makine öğrenmesi tabanlı yöntemler kullanarak, kullanıcı dostu, akıllı ve proaktif bir kişisel finans yönetim sistemi geliştirmektir. Geliştirilen sistem, mevcut finans uygulamalarının eksikliklerini gidermeyi ve kullanıcılara kapsamlı bir finansal yönetim deneyimi sunmayı hedeflemektedir.
+
+Bu doğrultuda sistem tarafından sağlanması planlanan temel hedefler aşağıda listelenmiştir:
+
+\begin{itemize}
+    \item \textbf{Akıllı Harcama Kategorilendirme:} Makine öğrenmesi algoritmaları kullanılarak harcama açıklamalarının otomatik sınıflandırılması.
+    \item \textbf{Ses Tabanlı İşlem Girişi:} Doğal dil işleme yöntemleri ile ``500 lira market alışverişi yaptım'' gibi ifadelerden harcama verisinin otomatik çıkarılması.
+    \item \textbf{Tahmine Dayalı Finansal Analiz:} LSTM ve Prophet tabanlı zaman serisi tahmin modelleri kullanarak geleceğe yönelik bütçe ve harcama tahminleri üretme.
+    \item \textbf{Akıllı Bütçe Yönetimi:} Gradient Boosted Trees gibi topluluk öğrenme yöntemleri ile kişiselleştirilmiş bütçe önerileri oluşturma.
+    \item \textbf{Grup Harcama Yönetimi:} Ortak harcamaların adil paylaşılmasını sağlayan grup hesaplama modülü geliştirme.
+    \item \textbf{Çoklu Para Birimi Desteği:} Gerçek zamanlı döviz kuru entegrasyonu ile farklı para birimlerinde işlem desteği sunma.
+    \item \textbf{Otomatik Fiş Tarama:} Tesseract OCR kullanarak fatura ve fişlerden harcama bilgilerinin çıkarılması.
+    \item \textbf{Akıllı Bildirim Sistemi:} Bütçe aşımları, tekrarlayan ödemeler ve tasarruf hedefleri için zamanında uyarılar sağlama.
+\end{itemize}
+
+\section{Kapsam ve Sınırlılıklar}
+
+Bu proje, web tabanlı bir kişisel finans takip sistemi olarak tasarlanmıştır ve aşağıdaki ana modülleri içermektedir:
+
+\begin{itemize}
+    \item Kullanıcı yönetimi (JWT tabanlı kimlik doğrulama, profil yönetimi, rol tabanlı yetkilendirme),
+    \item İşlem yönetimi (gelir-gider kaydı, kategori filtreleme, tarih aralığı analizi),
+    \item Yapay zeka modülleri:
+    \begin{itemize}
+        \item NLP tabanlı ses işleme,
+        \item ML ile kategori tahmini (Naive Bayes, Scikit-learn),
+        \item Zaman serisi tahminleri (Prophet, LSTM),
+        \item Bütçe optimizasyonu (Gradient Boosting).
+    \end{itemize}
+    \item Grup harcama hesaplama ve ödeme takibi,
+    \item Tasarruf hedefleri ve tekrarlayan ödeme hatırlatıcıları,
+    \item Yönetim paneli (kullanıcı ve işlem analitiği).
+\end{itemize}
+
+Projenin sınırları şu şekilde tanımlanmıştır:
+
+\begin{itemize}
+    \item Banka entegrasyonu bulunmamaktadır, veriler kullanıcı tarafından manuel girilecektir.
+    \item Uygulamanın bu aşaması web tarayıcı üzerinde çalışacak olup mobil uygulama gelecekte geliştirilebilir.
+    \item Sistem çevrimdışı kullanım için optimize edilmemiştir ve internet bağlantısı gerektirir.
+    \item OCR doğruluğu fiş kalitesi ve yazı tipine bağlı olarak \%75--\%90 aralığında değişebilmektedir.
+\end{itemize}
+
+\section{Projenin Önemi ve Katkıları}
+
+Bu çalışma, yapay zekâ teknolojilerinin kişisel finans yönetimi süreçlerine entegrasyonu açısından hem akademik hem de pratik katkılar sunmaktadır.
+
+Akademik katkılar:
+\begin{itemize}
+    \item Finansal veri girişinde NLP tabanlı ses işleme yaklaşımına örnek teşkil etmektedir.
+    \item Çok modelli makine öğrenmesi yapılarının tek bir finans yönetimi sistemine entegrasyonunu göstermektedir.
+    \item Hibrit finansal tahminleme modellerinin etkinliğini ortaya koymaktadır.
+\end{itemize}
+
+Pratik katkılar:
+\begin{itemize}
+    \item Kullanıcıların finansal farkındalığını artırmakta ve tasarruf bilinci oluşturmaktadır.
+    \item Grup harcamalarında şeffaflık ve adalet sağlamaktadır.
+    \item Proaktif öneriler ile finansal karar süreçlerini desteklemektedir.
+\end{itemize}
+
+Teknolojik katkılar:
+\begin{itemize}
+    \item Açık kaynak kodlu, ölçeklenebilir ve modüler bir mimari sunmaktadır.
+    \item Modern web teknolojileri ve yapay zekâ kütüphaneleri için bütünleşik bir uygulama örneği oluşturmaktadır.
+\end{itemize}
+

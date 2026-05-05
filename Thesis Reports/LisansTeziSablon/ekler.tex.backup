@@ -1,0 +1,38 @@
+\vglue20pt
+{\bf EK A.1}
+
+\begin{figure}
+ \centering
+ \includegraphics[width=230pt,keepaspectratio=true]{./fig/haritalar}
+ % sekil7.eps: 0x0 pixel, 300dpi, 0.00x0.00 cm, bb=14 14 455 369
+ \caption{Şekil A.1 : Bölgesel haritalar: (a)Yağış. (b)Akım. (c)Evapotranspirasyon ...}
+ \label{fig:6-1}
+\end{figure}
+
+{\bf EK A.2}
+
+\begin{table*}[!ht]
+{\setlength{\tabcolsep}{14pt}
+\caption{Ekler b\"ol\"um\"unde \c{c}izelge \"orne\u{g}i.}
+\begin{center}
+\vspace{-6mm}
+\begin{tabular}{cccc}
+\hline\hline
+Kolon A & Kolon B & Kolon C & Kolon D \\
+\hline
+Sat\i r A & Sat\i r A & Sat\i r A & Sat\i r A \\
+Sat\i r B & Sat\i r B & Sat\i r B & Sat\i r B \\
+Sat\i r C & Sat\i r C & Sat\i r C & Sat\i r C \\
+\hline
+\end{tabular}
+\vspace{-6mm}
+\end{center}
+\label{tableappendix2}}
+\end{table*}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac augue vel dui 
+adipiscing placerat et nec metus. Donec bibendum sodales mollis. Cras in lacus 
+justo, at vestibulum quam. Sed semper, est sit amet consectetur ornare, leo est 
+lacinia velit, adipiscing elementum lectus felis at sem.
+
+\newpage

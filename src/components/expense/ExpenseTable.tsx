@@ -129,7 +129,7 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) { // onEdit and on
     console.log("Starting batch delete for IDs:", selectedIds);
     setIsDeletingBatch(true);
     try {
-      const response = await fetch(`http://localhost:5001/expenses/delete-batch`, {
+      const response = await fetch('http://localhost:5001/expenses/delete-batch', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

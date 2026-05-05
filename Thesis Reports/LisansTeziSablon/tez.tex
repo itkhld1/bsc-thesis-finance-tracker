@@ -1,0 +1,71 @@
+% ---------------------------------------------------------------- %
+%                     LATEX Tez Sablonu                            %
+% ---------------------------------------------------------------- %
+\documentclass[tekyonlu,turkce,lisans,karton,bilisim]{tezSablon}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{url}
+
+
+\yazar{Ahmad Khaled}{SAMIM} 
+\ogrencino{20253843}
+
+% Definitions required by the class
+\unvan{}
+\esdanismani{}{}
+\ithaf{} 
+\anabilimdali{Bilgisayar Mühendisliği}{Department of Computer Engineering}
+\programi{Bilgisayar Mühendisliği}{Computer Engineering}
+
+\tarih{NİSAN 2026}{APRIL 2026}
+\tarihKucuk{Nisan 2026}{April 2026}
+
+\tezyoneticisi{Öğr. Gör. Şevket Umut ÇAKIR}{Pamukkale Üniversitesi}   
+
+\baslik{YAPAY ZEKÂ DESTEKLİ}{KİŞİSEL FİNANS TAKİP SİSTEMİ}{}
+
+\title{AI-POWERED PERSONAL}{FINANCE TRACKING}{SYSTEM}
+
+\tezvermetarih{21 Nisan 2026}{APRIL 2026} 
+\tezsavunmatarih{21 Mayıs 2026}{MAY 2026}
+
+\juriBir{Prof. Dr. Jüri ÜYESİ 1}{Pamukkale Üniversitesi}
+\juriIki{Prof. Dr. Jüri ÜYESİ 2}{Pamukkale Üniversitesi}
+
+\input{defs.tex}                                        
+
+% Content inputs
+\onsoz{\input{onsoz.tex}}             
+\kisaltmalistesi{\input{kisaltmalar.tex}}
+\sembollistesi{\input{semboller.tex}}
+\TabloListesiYok
+\SekilListesiYok
+\ozet{\input{ozet.tex}}
+                         
+\ozgecmis{\input{ozgecmis.tex}}
+
+\begin{document}
+% The class automatically generates cover, ToC, LoF, LoT, etc. here
+\input{ch1.tex}                                       
+\input{ch2.tex}                       
+\input{ch3.tex}                      
+\input{ch4.tex}
+\input{ch5.tex}
+\input{ch6.tex}
+\input{ch7.tex}
+
+\bibliographystyle{tezbib}        
+\bibliography{tez}
+
+\eklerkapak{}
+\input{eklerkapak.tex}  
+
+\eklerbolum{0}
+\input{ekler.tex}
+\end{document}

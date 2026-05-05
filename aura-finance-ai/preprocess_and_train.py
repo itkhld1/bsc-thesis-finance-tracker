@@ -2,6 +2,7 @@ import pandas as pd
 import xgboost as xgb
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
 import joblib
 import os
 
@@ -54,3 +55,13 @@ joblib.dump(target_cols, 'category_names.pkl')
 
 print("Success! Model retrained with the new Indian Finance Dataset.")
 print(f"Categories supported: {target_cols}")
+
+    
+# Test seti üzerinde tahmin yap
+y_pred = model.predict(X_test)
+    
+# R2 Skorunu hesapla (Genel Başarı Notu)
+score = r2_score(y_test, y_pred)
+print(f"\n--- MODEL DOĞRULAMA (VALIDATION) ---")
+print(f"XGBoost R2 Score: {score:.4f}")
+print(f"Başarı Yüzdesi: %{score*100:.1f}")

@@ -11,8 +11,10 @@ import path from 'path';
 import util from 'util';
 
 // Polyfill util.isNullOrUndefined for older libraries in Node 25+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 if (!(util as any).isNullOrUndefined) {
-  (util as any).isNullOrUndefined = (value: any) => value === null || value === undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (util as any).isNullOrUndefined = (value: unknown) => value === null || value === undefined;
 }
 
 dotenv.config();
@@ -35,6 +37,7 @@ app.use((req, res, next) => {
 });
 
 // Extend the Request interface for TypeScript
+/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace Express {
     interface Request {
@@ -45,6 +48,7 @@ declare global {
     }
   }
 }
+/* eslint-enable @typescript-eslint/no-namespace */
 
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL not set');
 if (!jwtSecret) throw new Error('JWT_SECRET not set');
@@ -90,8 +94,8 @@ pool.connect()
 
        // 3. This adds a "groupId" tag to your expenses so we know if an expense belongs to a group
        await client.query('ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "groupId" UUID REFERENCES "Group"(id) ON DELETE SET NULL');
-    } catch (e: any) {
-      console.log('Database migration log:', e.message);
+    } catch (e) {
+      console.log('Database migration log:', (e as Error).message);
     }
     client.release();
   })
@@ -118,7 +122,7 @@ app.get('/budget', protect, async (req, res) => {
   try {
     const result = await pool.query('SELECT "categoryId", "limitAmount" FROM "Budget" WHERE "userId" = $1', [req.user?.id]);
     res.json(result.rows);
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ message: 'Error fetching budget' });
   }
 });
@@ -133,8 +137,8 @@ app.post('/budget', protect, async (req, res) => {
       );
     }
     res.json({ message: "Budget updated successfully" });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error saving budget', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving budget', details: (error as Error).message });
   }
 });
 
@@ -155,7 +159,7 @@ app.get('/groups', protect, async (req, res) => {
     const groups = groupResult.rows;
 
     // For each group, fetch members and real expenses
-    for (let group of groups) {
+    for (const group of groups) {
       const membersResult = await pool.query(`
         SELECT u.id, u.name, u.email FROM "User" u
         JOIN "GroupMember" gm ON u.id = gm."userId"
@@ -170,12 +174,12 @@ app.get('/groups', protect, async (req, res) => {
       group.expenses = expensesResult.rows.map(e => ({
         ...e,
         paidBy: e.userId,
-        splitBetween: group.members.map((m: any) => m.id) // Default split between all for now
+        splitBetween: group.members.map((m: { id: number }) => m.id) // Default split between all for now
       }));
     }
     res.json(groups);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching groups', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching groups', details: (error as Error).message });
   }
 });
 
@@ -216,9 +220,9 @@ app.get('/groups', protect, async (req, res) => {
 
    await pool.query('COMMIT');
    res.status(201).json({ id: groupId, name, description });
- } catch (error: any) {
+ } catch (error) {
    await pool.query('ROLLBACK');
-   res.status(500).json({ message: 'Error creating group', details: error.message });
+   res.status(500).json({ message: 'Error creating group', details: (error as Error).message });
  }
 });
 
@@ -231,8 +235,8 @@ app.get('/', (req, res) => res.send('Aura Finance Backend is running!'));
 app.get('/ping', (req, res) => res.json({ message: 'pong', version: '1.1', timestamp: new Date() }));
 
 app.get('/debug/routes', (req, res) => {
-  const routes: any[] = [];
-  app._router.stack.forEach((middleware: any) => {
+  const routes: string[] = [];
+  app._router.stack.forEach((middleware: { route?: { methods: Record<string, boolean>, path: string } }) => {
     if (middleware.route) {
       routes.push(`${Object.keys(middleware.route.methods)} ${middleware.route.path}`);
     }
@@ -245,8 +249,8 @@ app.get('/auth/me', protect, async (req, res) => {
   try {
     const result = await pool.query('SELECT id, email, name, username, income FROM "User" WHERE id = $1', [req.user?.id]);
     res.json(result.rows[0]);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching user', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user', details: (error as Error).message });
   }
 });
 
@@ -259,8 +263,8 @@ app.put('/auth/user', protect, async (req, res) => {
       [income, req.user?.id]
     );
     res.json(result.rows[0]);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error updating income', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating income', details: (error as Error).message });
   }
 });
 
@@ -282,8 +286,8 @@ app.post('/groups/:id/members', protect, async (req, res) => {
     );
 
     res.json({ message: 'Member added successfully' });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error adding member', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding member', details: (error as Error).message });
   }
 });
 
@@ -309,8 +313,8 @@ app.delete('/groups/:id', protect, async (req: Request, res: Response) => {
 
     await pool.query('DELETE FROM "Group" WHERE id = $1', [groupId]);
     res.status(204).send();
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error deleting group', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting group', details: (error as Error).message });
   }
 });
 
@@ -319,8 +323,8 @@ app.get('/categories', async (req, res) => {
   try {
     const result = await pool.query('SELECT id, name, icon, color FROM "Category"');
     res.json(result.rows);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Failed to fetch categories', details: error.message });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch categories', details: (error as Error).message });
   }
 });
 
@@ -338,9 +342,9 @@ app.post('/auth/register', async (req, res) => {
     const user = result.rows[0];
     const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '7d' });
     res.status(201).json({ token, user });
-  } catch (error: any) {
-    if (error.code === '23505') return res.status(409).json({ message: 'User or username already exists' });
-    res.status(500).json({ message: 'Error registering user', details: error.message });
+  } catch (error) {
+    if ((error as { code?: string }).code === '23505') return res.status(409).json({ message: 'User or username already exists' });
+    res.status(500).json({ message: 'Error registering user', details: (error as Error).message });
   }
 });
 
@@ -354,8 +358,8 @@ app.post('/auth/login', async (req, res) => {
       return res.json({ token, user: { id: user.id, email: user.email, name: user.name, username: user.username, income: user.income } });
     }
     res.status(401).json({ message: 'Invalid credentials' });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Login error', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Login error', details: (error as Error).message });
   }
 });
 
@@ -437,7 +441,7 @@ app.get('/ai/insights', protect, async (req, res) => {
       return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
     });
 
-    const getCategoryTotals = (exps: any[]) => exps.reduce((acc, e) => {
+    const getCategoryTotals = (exps: { categoryId: string, amount: number | string }[]) => exps.reduce((acc, e) => {
       acc[e.categoryId] = (acc[e.categoryId] || 0) + Number(e.amount);
       return acc;
     }, {} as Record<string, number>);
@@ -547,9 +551,9 @@ app.get('/ai/insights', protect, async (req, res) => {
 
     res.json(finalInsights);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[AI Insights Error]`, error);
-    res.status(500).json({ message: 'Error generating insights', details: error.message });
+    res.status(500).json({ message: 'Error generating insights', details: (error as Error).message });
   }
 });
 
@@ -643,7 +647,7 @@ app.get('/ai/budget-predictions', protect, async (req, res) => {
 
     res.json(predictions.slice(0, 4)); // Return top 4 most relevant
 
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[AI Budget Prediction Error]`, error);
     res.status(500).json({ message: 'Error generating budget predictions' });
   }
@@ -667,7 +671,7 @@ app.get('/expenses', protect, async (req, res) => {
     const rawExpenses = result.rows;
     const finalExpenses = [];
 
-    for (let exp of rawExpenses) {
+    for (const exp of rawExpenses) {
       if (exp.groupId) {
         // 2. Find out how many people are in that group to calculate the split
         const memberCountRes = await pool.query(
@@ -697,9 +701,9 @@ app.get('/expenses', protect, async (req, res) => {
     }
 
     res.json(finalExpenses);
-  } catch (error: any) {
-    console.error('Fetch error:', error.message);
-    res.status(500).json({ message: 'Error fetching expenses', details: error.message });
+  } catch (error) {
+    console.error('Fetch error:', (error as Error).message);
+    res.status(500).json({ message: 'Error fetching expenses', details: (error as Error).message });
   }
 });
 
@@ -712,8 +716,8 @@ app.post('/expenses', protect, async (req, res) => {
       [id, amount, categoryId, description, date, notes, req.user?.id, groupId || null]
     );
     res.status(201).json(result.rows[0]);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error adding expense', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding expense', details: (error as Error).message });
   }
 });
 
@@ -726,8 +730,8 @@ app.put('/expenses/:id', protect, async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'Expense not found' });
     res.json(result.rows[0]);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Update error', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Update error', details: (error as Error).message });
   }
 });
 
@@ -742,9 +746,9 @@ app.post('/expenses/delete-batch', protect, async (req, res) => {
     const result = await pool.query('DELETE FROM "Expense" WHERE id = ANY($1) AND "userId" = $2', [ids, req.user?.id]);
     console.log(`[Batch Delete] Successfully deleted ${result.rowCount} rows`);
     res.status(204).send();
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[Batch Delete] Error:`, error);
-    res.status(500).json({ message: 'Batch delete error', details: error.message });
+    res.status(500).json({ message: 'Batch delete error', details: (error as Error).message });
   }
 });
 
@@ -752,8 +756,8 @@ app.delete('/expenses/:id', protect, async (req, res) => {
   try {
     await pool.query('DELETE FROM "Expense" WHERE id=$1 AND "userId"=$2', [req.params.id, req.user?.id]);
     res.status(204).send();
-  } catch (error: any) {
-    res.status(500).json({ message: 'Delete error', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Delete error', details: (error as Error).message });
   }
 });
 
@@ -769,8 +773,8 @@ app.post('/expenses/parse-voice', protect, async (req, res) => {
   const { transcript } = req.body;
   let amount = null;
   let categoryId = "other";
-  let description = transcript;
-  let date = new Date().toISOString().split('T')[0];
+  const description = transcript;
+  const date = new Date().toISOString().split('T')[0];
 
   const amountMatch = transcript.match(/(\d+)/);
   if (amountMatch) amount = parseFloat(amountMatch[0]);
@@ -789,8 +793,8 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
   const { text } = req.body;
   let amount = null;
   let categoryId = "other";
-  let description = "Receipt Expense";
-  let date = new Date().toISOString().split('T')[0];
+  const description = "Receipt Expense";
+  const date = new Date().toISOString().split('T')[0];
 
   const normalizedText = text.toLowerCase()
     .replace(/ğ/g, 'g')
@@ -884,8 +888,8 @@ app.get('/expenses/history', protect, async (req, res) => {
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
 
     res.json(history);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error fetching history', details: error.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching history', details: (error as Error).message });
   }
 });
 
@@ -931,13 +935,13 @@ app.get('/expenses/forecast', protect, async (req, res) => {
       if (isNaN(prediction)) throw new Error("AI NaN Result");
       
       console.log(`[Forecast] LSTM Prediction Successful: ₺${prediction.toFixed(2)}`);
-    } catch (aiError: any) {
+    } catch (aiError) {
       usedFallback = true;
       const firstAmount = amounts[0];
       const divisor = Math.max(1, n - 1);
       const avgGrowthPerMonth = (lastAmount - firstAmount) / divisor;
       prediction = lastAmount + avgGrowthPerMonth;
-      console.log(`[Forecast] AI Engine Error: ${aiError.message || aiError}. Fallback used.`);
+      console.log(`[Forecast] AI Engine Error: ${(aiError as Error).message || aiError}. Fallback used.`);
     }
 
     const trend = prediction > lastAmount ? "increasing" : prediction < lastAmount ? "decreasing" : "stable";
@@ -952,7 +956,7 @@ app.get('/expenses/forecast', protect, async (req, res) => {
       modelUsed: usedFallback ? "Emergency Trend" : "Deep LSTM Neural Network"
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[Forecast Fatal Error]`, error);
     res.status(500).json({ message: 'Internal AI Error', historyCount: 0, confidence: 0 });
   }
@@ -1054,8 +1058,8 @@ async function predictWithLSTM(data: number[]) {
     tf.dispose([input, predictionTensor]);
 
     return finalValue;
-  } catch (e: any) {
-    console.error(`[LSTM Engine Internal Error]`, e.message);
+  } catch (e) {
+    console.error(`[LSTM Engine Internal Error]`, (e as Error).message);
     return NaN;
   } finally {
     if (model) model.dispose();
@@ -1089,7 +1093,7 @@ app.get('/budget/optimize', protect, async (req, res) => {
     const scriptPath = path.join(__dirname, '../../aura-finance-ai/optimize.py');
     const actualsJson = JSON.stringify(actuals).replace(/"/g, '\\"');
     
-    exec(`python3 ${scriptPath} ${userIncome} "${actualsJson}"`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
+    exec(`python3 ${scriptPath} ${userIncome} "${actualsJson}"`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout) => {
       if (error) {
         console.error(`Exec error: ${error}`);
         return res.status(500).json({ message: "AI Optimization failed" });
@@ -1126,7 +1130,7 @@ app.get('/budget/optimize', protect, async (req, res) => {
         res.status(500).json({ message: "Failed to parse AI result" });
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ message: 'Error fetching user data' });
   }
 });

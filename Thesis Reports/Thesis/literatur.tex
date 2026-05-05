@@ -1,0 +1,61 @@
+% ---------------------------------------------------------
+% 2. BÖLÜM - LİTERATÜR ÖZETİ
+% ---------------------------------------------------------
+\chapter{LİTERATÜR ÖZETİ}
+
+\section{Kişisel Finans Yönetim Sistemleri}
+
+Kişisel finans yönetimi, bireylerin gelir ve giderlerini izlemek, bütçe oluşturmak ve finansal hedeflerine ulaşmak için kullandıkları yöntem ve araçların bütünüdür. Dijitalleşme ile birlikte bu süreç çoğunlukla mobil ve web tabanlı uygulamalar üzerinden yürütülmekte ve kayıt tutma, raporlama ve görselleştirme gibi işlevler otomatikleştirilmektedir.
+
+Literatürde ve piyasada yaygın kullanılan ticari uygulamalar arasında Mint, YNAB (You Need A Budget), Splitwise ve PocketGuard öne çıkmaktadır. Mint, geniş banka entegrasyon ağı ile otomatik işlem çekme ve kategori bazlı raporlama sunarken, YNAB proaktif bütçeleme felsefesi ile her gelire bir görev atama yaklaşımını benimsemektedir. Splitwise, grup harcamalarının takibi ve borç-alacak hesaplamalarına odaklanmakta, PocketGuard ise ``harcanabilir gelir'' kavramı ile kullanıcıya gerçek zamanlı ne kadar güvenle harcayabileceğini göstermektedir.
+
+Türkiye pazarında Tosla ve Paycell gibi yerel çözümler bulunsa da, bu uygulamaların büyük bölümü basit gelir-gider takibi ile sınırlı kalmakta; yapay zekâ tabanlı tahmin, otomatik kategorilendirme, ses tabanlı giriş veya gelişmiş grup harcama yönetimi gibi özellikleri kapsamamaktadır. Ayrıca, bu sistemlerin çoğu kapalı kaynak kodlu olup, akademik ve araştırma amaçlı genişletilebilirlik açısından sınırlamalar barındırmaktadır.
+
+\section{Yapay Zekâ ve Makine Öğrenmesi Uygulamaları}
+
+\subsection{Harcama Kategorilendirme}
+
+Harcama kategorilendirme, kişisel finans uygulamalarında kullanıcı deneyimini doğrudan etkileyen kritik bir bileşendir. Bu amaçla, Naive Bayes, Destek Vektör Makineleri (SVM), Random Forest ve LSTM gibi çeşitli makine öğrenmesi yöntemleri kullanılmaktadır. Bu modeller, işlem açıklamalarından metin özellikleri çıkararak harcamaları uygun kategorilere atamak için metin sınıflandırma problemi olarak kurgulanmaktadır.
+
+Son yıllarda, BERT ve FinBERT gibi önceden eğitilmiş dil modellerine dayalı derin öğrenme yaklaşımları, finansal metinlerin bağlamsal olarak daha doğru temsil edilmesini sağlamış ve geleneksel yöntemlere kıyasla daha yüksek doğruluk oranları sunmuştur. Bu modeller, özellikle kısaltılmış, eksik veya belirsiz işlem açıklamalarında anlamlı iyileşmeler sağlayabilmektedir.
+
+\subsection{Zaman Serisi Tahmin Modelleri}
+
+Kişisel harcama tahmini, kullanıcılara proaktif bütçe önerileri sunmak ve olası bütçe açıklarını önceden tespit etmek için önemli bir araçtır. Geleneksel zaman serisi yöntemleri arasında ARIMA ve mevsimsel varyantları sıkça kullanılmaktadır. Bu tür modeller, trend ve mevsimsellik bileşenlerini ayrıştırarak kısa ve orta vadeli tahminler üretmektedir.
+
+Buna karşın, uzun vadeli bağımlılıkları ve doğrusal olmayan ilişkileri modelleyebilen LSTM tabanlı derin öğrenme yaklaşımları, kişisel harcama tahmini alanında giderek daha fazla tercih edilmektedir. Yapılan çalışmalarda, LSTM mimarilerinin klasik doğrusal modellere göre daha düşük hata değerleri ile daha isabetli tahminler üretebildiği gösterilmiştir. Prophet gibi bileşen temelli modeller ise trend, mevsimsellik ve tatil etkilerini ayrı ayrı modelleyebilme özelliği ile finansal zaman serilerinde pratik bir alternatif sunmaktadır. Bazı çalışmalarda Prophet ve LSTM gibi modellerin hibrit olarak kullanıldığı ve bu sayede hem uzun dönemli eğilimlerin hem de kısa dönemli dalgalanmaların daha etkin biçimde yakalandığı rapor edilmektedir.
+
+\subsection{Doğal Dil İşleme ve OCR Uygulamaları}
+
+Ses tabanlı harcama girişi ve serbest metin açıklamalarından yapılandırılmış veri çıkarımı için doğal dil işleme (NLP) teknikleri yaygın biçimde kullanılmaktadır. İsimlendirilmiş varlık tanıma (NER), niyet sınıflandırma (intent classification) ve slot doldurma (slot filling) yöntemleri ile kullanıcı ifadelerinden tutar, kategori, tarih ve açıklama gibi alanlar otomatik olarak elde edilebilmektedir. Modern NLP kütüphaneleri Türkçe dahil birçok dil için hazır modeller sunmakta, ayrıca özel finansal veri kümeleri üzerinde tekrar eğitilerek (fine-tuning) alan odaklı performans artırılabilmektedir.
+
+Fiş ve fatura görsellerinden metin çıkarımı için Tesseract gibi optik karakter tanıma (OCR) motorları yaygın olarak kullanılmakta, buna ek olarak son yıllarda derin öğrenme tabanlı OCR çözümleriyle doğruluk oranlarında artış sağlanmaktadır. Ancak fiş kalitesi, ışık koşulları ve yazı tipi gibi faktörler, OCR performansını hâlâ önemli ölçüde etkilemektedir.
+
+\section{Bütçe Optimizasyonu ve Öneri Sistemleri}
+
+Bütçe optimizasyonu ve kullanıcıya kişiselleştirilmiş finansal öneriler sunma amacıyla Gradient Boosted Trees (XGBoost, LightGBM) gibi topluluk öğrenme yöntemleri sıkça kullanılmaktadır. Bu modeller, kullanıcı profili, geçmiş harcama kalıpları, mevsimsel faktörler ve kategori bazlı harcama dağılımı gibi çok sayıda özelliği dikkate alarak bütçe tahsisi için karar destek mekanizmaları oluşturabilmektedir.
+
+Pekiştirmeli öğrenme yaklaşımlarında ise bütçe ayarlama süreci bir karar verme problemi olarak ele alınmakta, kullanıcı hedeflerine ulaşıldıkça ödül fonksiyonları üzerinden politikalar güncellenmektedir. Böylece, zaman içinde kullanıcının harcama davranışına adapte olabilen dinamik bütçe öneri sistemleri tasarlanabilmektedir.
+
+\section{Güvenlik ve Gizlilik}
+
+Finansal verilerin hassas niteliği nedeniyle güvenlik ve gizlilik, kişisel finans yönetim sistemlerinin tasarımında temel bir gerekliliktir. Veri saklama aşamasında güçlü şifreleme yöntemleri, veri iletiminde güvenli iletişim protokolleri ve kimlik doğrulamada token tabanlı mekanizmalar ile çok faktörlü kimlik doğrulama yaklaşımı yaygın olarak kullanılmaktadır. Ayrıca, veri koruma mevzuatları doğrultusunda veri minimizasyonu, kullanıcı onayı ve unutulma hakkı gibi prensipler önem kazanmaktadır.
+
+Makine öğrenmesi bağlamında federated learning ve differential privacy gibi yaklaşımlar, kişisel ham veriyi merkezi sunucuya göndermeden model eğitimi yapma ve istatistiksel analizlerde gürültü ekleyerek bireysel gizliliği koruma imkânı sunmaktadır. Bu yöntemler, finansal uygulamalarda gizlilik odaklı yapay zekâ çözümleri için önemli bir araştırma alanı oluşturmaktadır.
+
+\section{Literatür Analizi ve Önerilen Sistemin Konumu}
+
+Yapılan literatür taraması sonucunda, mevcut ticari uygulamaların çoğunun gelir-gider kaydı ve temel bütçeleme işlevleri sağladığı, ancak yapay zekâ entegrasyonu, ses tabanlı işlem girişi, gelişmiş grup harcama yönetimi ve yerelleştirilmiş çözümler açısından sınırlı kaldığı görülmüştür. Akademik çalışmalar ise genellikle belirli bir probleme (örneğin yalnızca harcama tahmini veya yalnızca ses tanıma) odaklanmakta ve tam işlevli bir uçtan uca sistem sunmamaktadır.
+
+Bu tez kapsamında geliştirilen \textit{AI-Powered Personal Finance Tracker} sistemi, literatürde tespit edilen bu boşlukları adreslemeyi amaçlamaktadır. Önerilen sistem:
+
+\begin{itemize}
+    \item Bireysel ve grup finans yönetimini tek bir platformda birleştirmeyi,
+    \item Harcama kategorilendirme, zaman serisi tahmini ve bütçe optimizasyonu için çoklu makine öğrenmesi modellerini entegre etmeyi,
+    \item Türkçe ve İngilizce dil desteği ile ses, metin ve görsel tabanlı çoklu giriş yöntemleri sunmayı,
+    \item Açık kaynak, modüler ve ölçeklenebilir bir mimari ile araştırma ve geliştirmeye uygun bir temel oluşturmayı
+\end{itemize}
+
+hedeflemektedir.
+
+Bu bağlamda, tez çalışması hem mevcut ticari çözümlerden daha zengin işlevsellik sunmayı, hem de akademik literatürde önerilen yöntemleri bütünleşik bir kişisel finans yönetimi sistemi içerisinde uygulamayı amaçlamaktadır.

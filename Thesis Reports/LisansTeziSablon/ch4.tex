@@ -1,0 +1,44 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{TEKNİK UYGULAMA}\label{ch:teknik_uygulama}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace*{-1cm}
+
+Bu bölümde Aura Finance uygulamasının temel işlevlerinin teknik gerçekleştirimi ve algoritma detayları sunulmaktadır.
+
+\section{Kullanıcı Kimlik Doğrulama ve Güvenlik}
+
+Uygulama, güvenli bir oturum yönetimi için JSON Web Token (JWT) tabanlı stateless (durum bilgisi saklamayan) bir yapı kullanır.
+\begin{itemize}
+    \item \textbf{Kayıt Olma:} Kullanıcı şifreleri sunucuya ulaştığında \texttt{bcryptjs} kütüphanesi kullanılarak tuzlanmış (salted) bir şekilde karma (hash) işlemine tabi tutulur.
+    \item \textbf{Giriş Yapma:} Başarılı giriş sonrası sunucu, kullanıcının kimlik bilgilerini içeren ve 7 gün geçerliliği olan bir JWT imzalar.
+    \item \textbf{Yetkilendirme:} İstemci tarafındaki her hassas istek (harcama ekleme, bütçe görüntüleme vb.), HTTP "Authorization" başlığında bu token'ı taşır.
+\end{itemize}
+
+\section{Harcama Yönetimi ve Veri İşleme}
+
+Harcama yönetimi modülü, kullanıcılara esnek bir veri giriş imkanı sunar.
+
+\subsection{CRUD İşlemleri}
+Harcamalar PostgreSQL üzerinde \texttt{Expense} tablosunda saklanır. React tarafında \texttt{useExpenses} hook'u, \texttt{React Query} kullanarak verilerin önbelleğe alınmasını ve sunucu ile asenkron senkronizasyonunu yönetir. Toplu silme (batch delete) ve düzenleme gibi gelişmiş operasyonlar desteklenmektedir.
+
+\subsection{Grup Harcamaları ve Paylaştırma Mantığı}
+Grup harcamalarında, bir kullanıcı harcamayı yapar ve harcama belirli bir grup ID'si ile etiketlenir. Sunucu tarafında, harcama listelenirken grubun üye sayısına bölünerek her bir kullanıcıya düşen "pay" (share) otomatik olarak hesaplanır. Bu sayede kullanıcılar hem kişisel harcamalarını hem de grup içindeki borç/alacak durumlarını tek bir arayüzden takip edebilirler.
+
+\section{Akıllı Veri Giriş Yöntemleri}
+
+Uygulamanın en önemli özelliklerinden biri, veri girişini kolaylaştıran yardımcı teknolojilerdir.
+
+\subsection{OCR ile Makbuz Okuma}
+İstemci tarafında çalışan \texttt{Tesseract.js} motoru sayesinde kullanıcılar makbuz fotoğraflarını yükleyebilirler. Uygulama, görüntüden çıkarılan metin içindeki anahtar kelimeleri (örneğin: "Toplam", "Market", "Benzin") analiz ederek harcama miktarını ve kategorisini otomatik olarak tahmin eder.
+
+\subsection{Sesli Komut ile Harcama Ekleme}
+Web Speech API kullanılarak gerçekleştirilen bu özellikte, kullanıcının sesli ifadesi (örneğin: "Yemek için 250 lira harcadım") metne dönüştürülür. Sunucu tarafındaki bir düzenli ifade (regex) analizörü, bu metinden sayısal miktarı ve kategori ismini ayıklayarak formu otomatik doldurur.
+
+\section{AI Insights (Yapay Zekâ İçgörüleri)}
+
+Sunucu tarafında çalışan bir analiz motoru, kullanıcının geçmiş harcama verilerini tarayarak aşağıdaki içgörüleri üretir:
+\begin{itemize}
+    \item \textbf{Abonelik Tespiti:} Belirli aralıklarla tekrarlanan aynı miktardaki harcamaları tespit eder.
+    \item \textbf{Anomali Tespiti:} Kullanıcının alışılagelmiş harcama ortalamasının 2.5 katı üzerindeki işlemleri "Olağandışı Harcama" olarak işaretler.
+    \item \textbf{Hız Analizi:} Ayın mevcut günündeki harcama hızını kullanarak ay sonu toplam harcama tahmininde bulunur.
+\end{itemize}

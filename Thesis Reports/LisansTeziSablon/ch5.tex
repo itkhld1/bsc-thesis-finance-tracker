@@ -1,0 +1,42 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{YAPAY ZEKÂ VE METODOLOJİ}\label{ch:ai_metodoloji}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace*{-1cm}
+
+Aura Finance, kullanıcıların finansal kararlarını desteklemek için iki temel yapay zekâ yaklaşımı kullanmaktadır: Zaman serisi tahmini (LSTM) ve bütçe optimizasyonu (XGBoost).
+
+\section{Harcama Tahmini: LSTM Modeli}
+
+Kullanıcıların gelecek ay ne kadar harcama yapacağını tahmin etmek için Uzun Kısa Süreli Bellek (Long Short-Term Memory - LSTM) ağları kullanılmıştır. Bu model, Node.js üzerinde \texttt{TensorFlow.js} kütüphanesi ile gerçek zamanlı olarak çalıştırılmaktadır.
+
+\subsection{Model Mimarisi}
+Model, ardışık (sequential) bir yapıdadır ve şu katmanlardan oluşur:
+\begin{itemize}
+    \item \textbf{LSTM Katmanı:} 32 birimden oluşur ve 'tanh' aktivasyon fonksiyonu kullanır. Aşırı öğrenmeyi (overfitting) önlemek için \%10 dropout uygulanmıştır.
+    \item \textbf{Yoğun (Dense) Katman:} 16 birimden oluşan ara katman (ReLU aktivasyonu).
+    \item \textbf{Çıkış Katmanı:} 1 birimlik sigmoid aktivasyonlu çıkış (normalizasyon sonrası değer tahmini için).
+\end{itemize}
+
+\subsection{Eğitim Süreci}
+Model, kullanıcının geçmiş harcama verilerini (minimum 3-6 ay) pencereleme (windowing) yöntemiyle işler. Veriler eğitim öncesinde [0, 1] aralığına normalleştirilir. Adam optimizasyon algoritması kullanılarak 200 epoch boyunca eğitilir.
+
+\section{Bütçe Optimizasyonu: XGBoost Regresyonu}
+
+Kullanıcıların gelirlerine göre ideal bütçe dağılımını belirlemek için Python tabanlı bir makine öğrenmesi modeli geliştirilmiştir.
+
+\subsection{Veriseti ve Önişleme}
+Eğitim için \texttt{Indian\_Finance\_Dataset.csv} kullanılmıştır. Bu veriseti, farklı gelir gruplarının harcama alışkanlıklarını içermektedir. Veriler, uygulamadaki 8 ana kategoriye (gıda, ulaşım, alışveriş, eğlence, faturalar, sağlık, seyahat, diğer) eşleştirilmiştir.
+
+\subsection{Model: Multi-Output XGBoost}
+Tek bir regresyon modeli yerine, her bir kategori için eşzamanlı tahmin yapabilen \texttt{MultiOutputRegressor} mimarisi tercih edilmiştir. XGBoost algoritması, yüksek tahmin gücü ve hızlı çalışma performansı nedeniyle seçilmiştir.
+
+\section{Hibrit Dürtme (Nudge) Algoritması}
+
+Sistemin en özgün yanlarından biri, statik bütçe önerileri yerine kullanıcının mevcut alışkanlıklarını da hesaba katan hibrit bir mantık yürütmesidir. İdeal bütçe ($B_{ideal}$) ve kullanıcının gerçek harcama ortalaması ($B_{gercek}$) arasındaki denge şu formülle hesaplanır:
+
+\begin{equation}
+\label{eq:hybrid}
+   B_{oneri} = (B_{ideal} \times 0.70) + (B_{gercek} \times 0.30)
+\end{equation}
+
+Bu yaklaşım, kullanıcıyı ideal finansal hedeflere (\%70 ağırlık) yönlendirirken, mevcut yaşam standartlarını (\%30 ağırlık) da göz ardı etmeyerek gerçekçi ve uygulanabilir bütçe hedefleri sunar. Ayrıca, toplam bütçenin kullanıcının gelirinin \%85'ini aşmaması için otomatik bir ölçeklendirme (scaling) mekanizması uygulanır; bu sayede en az \%15 tasarruf hedefi korunur.

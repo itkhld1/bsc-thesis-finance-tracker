@@ -1,0 +1,55 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{SİSTEM MİMARİSİ}\label{ch:sistem_mimarisi}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace*{-1cm}
+
+Bu proje, modern finansal takip ve yapay zekâ tabanlı bütçe optimizasyonu sunan bir web uygulamasıdır. Bu bölümde, sistemin genel yapısı, kullanılan teknolojiler ve veri modelleri detaylandırılmıştır.
+
+\section{Genel Sistem Mimarisi}
+
+Sistem, bir monorepo yapısında tasarlanmış olup üç ana bileşenden oluşmaktadır:
+\begin{enumerate}
+    \item \textbf{İstemci (Frontend):} React (Vite) tabanlı kullanıcı arayüzü.
+    \item \textbf{Sunucu (Backend):} Node.js ve Express.js tabanlı API servisleri.
+    \item \textbf{Yapay Zekâ Servisi:} Python tabanlı bütçe optimizasyon ve tahmin modelleri.
+\end{enumerate}
+
+Şekil~\ref{fig:mimari_diyagram} sistemin genel çalışma prensibini göstermektedir. Kullanıcılar web arayüzü üzerinden harcamalarını girerken, sunucu bu verileri PostgreSQL veritabanına kaydeder ve gerektiğinde Python tabanlı ML modellerini veya Node.js tarafındaki LSTM ağını tetikler.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{aura_sc1}
+  \caption{Aura Finance Genel Sistem Mimarisi.}
+  \label{fig:mimari_diyagram}
+\end{figure}
+
+\section{Veritabanı Şeması}
+
+Sistemin kalbinde PostgreSQL veritabanı yer almaktadır. Veri modelleri, Prisma ORM kullanılarak tanımlanmış ve yönetilmiştir. Temel tablolar ve ilişkileri aşağıda açıklanmıştır:
+
+\subsection{Kullanıcı (User) Modeli}
+Kullanıcıların temel bilgilerini (ad, e-posta, şifre karması) ve aylık toplam gelir (income) bilgisini saklar.
+
+\subsection{Harcama (Expense) Modeli}
+Her bir harcamanın miktarını, kategorisini, tarihini ve açıklamasını içerir. Ayrıca harcamanın kişisel mi yoksa bir gruba mı ait olduğunu belirten \texttt{groupId} alanına sahiptir.
+
+\subsection{Bütçe (Budget) Modeli}
+Kullanıcıların her bir kategori için belirlediği limitleri saklar. Yapay zekâ tarafından önerilen bütçeler de bu tabloya güncellenebilmektedir.
+
+\subsection{Grup ve Grup Üyeliği (Group \& GroupMember)}
+Paylaşımlı harcamalar için tasarlanmıştır. Kullanıcılar gruplar oluşturabilir ve harcamaları grup üyeleri arasında otomatik olarak paylaştırabilirler.
+
+\section{Teknoloji Yığını}
+
+\subsection{İstemci Tarafı Teknolojileri}
+Aura Finance istemcisi, yüksek performans ve tip güvenliği için \textbf{TypeScript} ile yazılmış bir \textbf{React} uygulamasıdır. \textbf{Tailwind CSS} ve \textbf{Shadcn UI} bileşenleri kullanılarak modern ve duyarlı (responsive) bir arayüz tasarlanmıştır. Veri yönetimi için \textbf{React Query} kullanılarak sunucu ile senkronizasyon optimize edilmiştir.
+
+\subsection{Sunucu Tarafı Teknolojileri}
+Arka uçta \textbf{Node.js} ve \textbf{Express.js} kullanılmıştır. Kimlik doğrulama işlemleri için \textbf{JWT (JSON Web Token)} ve \textbf{bcryptjs} kütüphaneleri tercih edilmiştir. Veritabanı işlemleri için \textbf{PostgreSQL} tercih edilmiş, şema yönetimi ve sorgular için \textbf{Prisma} ve \textbf{pg} kütüphaneleri kullanılmıştır.
+
+\subsection{Yapay Zekâ Teknolojileri}
+\begin{itemize}
+    \item \textbf{TensorFlow.js:} Node.js ortamında zaman serisi tahmini (LSTM) yapmak için kullanılmıştır.
+    \item \textbf{XGBoost (Python):} Karmaşık bütçe optimizasyon algoritmaları için Multi-Output Regressor modeli olarak uygulanmıştır.
+    \item \textbf{Tesseract.js:} İstemci tarafında OCR (Optik Karakter Tanıma) ile makbuz okuma özelliği sağlanmıştır.
+\end{itemize}

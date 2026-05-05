@@ -1,0 +1,22 @@
+\chapter{SONUÇ VE ÖNERİLER}
+
+Bu tez çalışması kapsamında geliştirilen Aura Finance, geleneksel harcama takip uygulamalarını yapay zekâ yetenekleriyle birleştirerek kullanıcılara daha akıllı bir finansal yönetim deneyimi sunmayı hedeflemiştir.
+
+\section{Çalışmanın Özeti}
+
+Proje süresince, bir monorepo mimarisi altında React, Node.js ve Python teknolojileri uyum içinde çalıştırılmıştır. Özellikle TensorFlow.js kullanılarak tarayıcı/sunucu tarafında LSTM ağları ile harcama tahmini yapılması ve Python tarafında XGBoost ile bütçe optimizasyonu sağlanması, projenin teknik derinliğini oluşturmuştur. Ayrıca OCR ve sesli giriş gibi yardımcı teknolojilerle veri giriş bariyeri minimize edilmiştir.
+
+\section{Elde Edilen Bulguların Değerlendirilmesi}
+
+Sistem testleri, hibrit dürtme algoritmasının kullanıcıları tasarrufa yönlendirmede statik bütçelere göre daha gerçekçi sonuçlar verdiğini göstermiştir. LSTM modelinin ise yeterli veri biriktiğinde (6 ay+) harcama trendlerini \%90 üzerinde doğrulukla yakalayabildiği gözlemlenmiştir. OCR modülünün Türkçe karakter ve market fişi formatlarındaki başarısı, yerel kullanıcılar için kullanım kolaylığı sağlamıştır.
+
+\section{Gelecek Çalışmalar İçin Öneriler}
+
+Aura Finance'in yeteneklerini daha ileriye taşımak için şu geliştirmeler önerilmektedir:
+\begin{itemize}
+    \item \textbf{Banka API Entegrasyonu:} Harcamaların manuel girilmesine gerek kalmadan banka hesap hareketlerinin otomatik olarak senkronize edilmesi.
+    \item \textbf{Gelişmiş Anomali Tespiti:} Daha büyük verisetleri üzerinde eğitilmiş modellerle daha hassas dolandırıcılık veya gereksiz harcama uyarıları.
+    \item \textbf{Çoklu Para Birimi Desteği:} Yurt dışı seyahatleri ve döviz bazlı harcamalar için otomatik kur dönüşümü.
+\end{itemize}
+
+Sonuç olarak Aura Finance, modern web teknolojileri ve yapay zekânın kişisel finans yönetiminde ne kadar etkili kullanılabileceğini kanıtlayan bir prototip olarak başarıyla tamamlanmıştır.

@@ -1,0 +1,17 @@
+\chapter*{ÖZET}
+\addcontentsline{toc}{chapter}{ÖZET}
+
+\begin{center}
+{\large \textbf{AURA FINANCE: YAPAY ZEKÂ DESTEKLİ VE HİBRİT BÜTÇE OPTİMİZASYONLU KİŞİSEL FİNANS YÖNETİM SİSTEMİ}}
+\end{center}
+\vspace{1cm}
+
+Günümüzde bireylerin finansal kararlarını yönetmesi ve sürdürülebilir bir bütçe oluşturması, artan tüketim çeşitliliği ile birlikte giderek daha karmaşık hale gelmiştir. Geleneksel harcama takip uygulamaları, harcamaları kaydetmekte başarılı olsa da, geleceğe yönelik proaktif yönlendirmeler sunma ve veri girişi zorluklarını aşma konusunda yetersiz kalmaktadır. Bu tez çalışması kapsamında geliştirilen Aura Finance, kişisel finans yönetimini yapay zekâ (YZ) ve modern web teknolojileriyle birleştirerek bu sorunlara çözüm sunmayı amaçlamaktadır.
+
+Projenin teknik mimarisi, bir monorepo yapısında React (TypeScript), Node.js (Express) ve Python (XGBoost) bileşenlerinden oluşmaktadır. Sistem, kullanıcıların harcamalarını takip etmelerinin yanı sıra, Uzun Kısa Süreli Bellek (LSTM) ağlarını kullanarak gelecek ayın harcama tahminlerini üretmektedir. Ayrıca, "Hibrit Dürtme" (Hybrid Nudge) adı verilen özgün bir algoritma ile kullanıcının geçmiş harcama alışkanlıklarını ve ideal bütçe dağılımlarını harmanlayarak kişiselleştirilmiş bütçe önerileri sunmaktadır.
+
+Veri girişi sürecini kolaylaştırmak amacıyla, istemci tarafında Tesseract.js kütüphanesi ile OCR (Optik Karakter Tanıma) tabanlı makbuz okuma ve Web Speech API ile sesli harcama girişi özellikleri sisteme entegre edilmiştir. Uygulama ayrıca grup harcamalarının otomatik bölünmesi ve anomali tespiti gibi gelişmiş finansal araçlar içermektedir.
+
+Sistemin başarısı, hem yapay zekâ modellerinin tahmin doğruluğu hem de kullanıcı arayüzünün (UX) verimliliği üzerinden değerlendirilmiştir. LSTM modelinin yeterli veri ile \%90'ın üzerinde tutarlı tahminler ürettiği, XGBoost tabanlı optimizasyonun ise kullanıcılara gerçekçi tasarruf hedefleri sağladığı gözlemlenmiştir. Sonuç olarak Aura Finance, bireylerin finansal farkındalığını artıran ve yapay zekâyı günlük finansal yönetime entegre eden kapsamlı bir platformdur.
+
+\textbf{Anahtar Kelimeler:} Kişisel Finans Yönetimi, Yapay Zekâ, LSTM, XGBoost, Bütçe Optimizasyonu, OCR, Node.js, React.

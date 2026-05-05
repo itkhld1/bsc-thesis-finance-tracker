@@ -1,0 +1,27 @@
+\chapter{YAPAY ZEKÂ VE METODOLOJİ}
+
+Aura Finance, kullanıcıların finansal kararlarını desteklemek için iki temel yapay zekâ yaklaşımı kullanmaktadır: Zaman serisi tahmini (LSTM) ve bütçe optimizasyonu (XGBoost).
+
+\section{Harcama Tahmini: LSTM Modeli}
+
+Kullanıcıların gelecek ay ne kadar harcama yapacağını tahmin etmek için Uzun Kısa Süreli Bellek (Long Short-Term Memory - LSTM) ağları kullanılmıştır. Bu model, Node.js üzerinde \texttt{TensorFlow.js} kütüphanesi ile gerçek zamanlı olarak çalıştırılmaktadır.
+
+\subsection{Model Mimarisi}
+Model, ardışık (sequential) bir yapıdadır ve şu katmanlardan oluşur: LSTM katmanı (32 birim, \%10 dropout), Yoğun katman (16 birim, ReLU) ve Çıkış katmanı (1 birim, sigmoid).
+
+\subsection{Eğitim Süreci}
+Model, kullanıcının geçmiş harcama verilerini pencereleme (windowing) yöntemiyle işler. Veriler eğitim öncesinde [0, 1] aralığına normalleştirilir. Adam optimizasyon algoritması kullanılarak eğitilir.
+
+\section{Bütçe Optimizasyonu: XGBoost Regresyonu}
+
+Kullanıcıların gelirlerine göre ideal bütçe dağılımını belirlemek için Python tabanlı bir makine öğrenmesi modeli geliştirilmiştir. Eğitim için \texttt{Indian\_Finance\_Dataset.csv} kullanılmıştır. Model olarak \texttt{MultiOutputRegressor} mimarisiyle XGBoost algoritması tercih edilmiştir.
+
+\section{Hibrit Dürtme (Nudge) Algoritması}
+
+Sistemin en özgün yanlarından biri, statik bütçe önerileri yerine kullanıcının mevcut alışkanlıklarını da hesaba katan hibrit bir mantık yürütmesidir. İdeal bütçe ($B_{ideal}$) ve kullanıcının gerçek harcama ortalaması ($B_{gercek}$) arasındaki denge şu formülle hesaplanır:
+
+\begin{equation}
+   B_{oneri} = (B_{ideal} \times 0.70) + (B_{gercek} \times 0.30)
+\end{equation}
+
+Bu yaklaşım, kullanıcıyı ideal finansal hedeflere yönlendirirken, mevcut yaşam standartlarını da göz ardı etmeyerek gerçekçi bütçe hedefleri sunar.
