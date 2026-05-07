@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/itkhld1/bsc-thesis-finance-tracker)
+
 # Aura Finance - AI-Powered Personal Finance Management
 
 Aura Finance is a comprehensive personal finance management system that leverages Artificial Intelligence to provide users with intelligent spending insights, automated expense tracking, and predictive budgeting.
