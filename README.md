@@ -4,10 +4,19 @@
 
 Aura Finance is a comprehensive personal finance management system that leverages Artificial Intelligence to provide users with intelligent spending insights, automated expense tracking, and predictive budgeting.
 
+<p align="center">
+  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Python-ML-3776AB?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/TensorFlow.js-LSTM-FF6F00?logo=tensorflow&logoColor=white" />
+</p>
+
 
 ## 📷 Screenshots
 
-<p float="left">
+<p float="left" align="center">
   <img width="430" src="ScreenShots/sc1.png">
   <img width="430" src="ScreenShots/sc2.png">
   <img width="430" src="ScreenShots/sc3.png">
