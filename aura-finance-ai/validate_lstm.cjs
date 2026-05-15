@@ -1,4 +1,3 @@
-// Node 25+ uyumluluk yaması
 const util = require('util');
 if (!util.isNullOrUndefined) {
     util.isNullOrUndefined = (value) => value === null || value === undefined;
