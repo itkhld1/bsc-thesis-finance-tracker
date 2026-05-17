@@ -5,9 +5,10 @@ import { CategoryChart } from "@/components/dashboard/CategoryChart";
 import { SpendingTrends } from "@/components/dashboard/SpendingTrends";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { AIRecommendations } from "@/components/dashboard/AIRecommendations";
+import { AIWhatIfSimulator } from "@/components/dashboard/AIWhatIfSimulator";
+import { GoalsTracker } from "@/components/dashboard/GoalsTracker";
 import { AIFeatureHighlight } from "@/components/ai/AIFeatureHighlight";
 import { AIPredictiveChart } from "@/components/ai/AIPredictiveChart";
-import { AISmartAlerts } from "@/components/ai/AISmartAlerts";
 import { BudgetStatus } from "@/components/dashboard/BudgetStatus";
 import { EditIncomeDialog } from "@/components/dashboard/EditIncomeDialog";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,8 @@ import { useExpenses } from "@/hooks/useExpenses";
 import { useBudget } from "@/hooks/useBudget";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -50,6 +52,7 @@ export default function Dashboard() {
 
   const [selectedMonth, setSelectedMonth] = useState(months[new Date().getMonth()]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [compareWithPrevious, setCompareWithPrevious] = useState(true);
 
   const isLoading = isCatsLoading || isExpensesLoading || isBudgetLoading;
 
@@ -58,24 +61,33 @@ export default function Dashboard() {
   const monthIdx = months.indexOf(selectedMonth);
   
   // Current Month Data
-  const currentMonthExpenses = expenses?.filter(e => {
-    const d = new Date(e.date);
-    return d.getMonth() === monthIdx && d.getFullYear() === selectedYear;
-  }) || [];
+  const currentMonthExpenses = useMemo(() => {
+    return expenses?.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === monthIdx && d.getFullYear() === selectedYear;
+    }) || [];
+  }, [expenses, monthIdx, selectedYear]);
+
   const monthlyExpensesTotal = currentMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
 
-  // Previous Month Data for Trends
+  // Previous Month Data for Comparison
   const prevMonthIdx = monthIdx === 0 ? 11 : monthIdx - 1;
   const prevYear = monthIdx === 0 ? selectedYear - 1 : selectedYear;
-  const prevMonthExpenses = expenses?.filter(e => {
-    const d = new Date(e.date);
-    return d.getMonth() === prevMonthIdx && d.getFullYear() === prevYear;
-  }) || [];
-  const prevMonthlyExpensesTotal = prevMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
+  const comparisonExpenses = useMemo(() => {
+    return expenses?.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === prevMonthIdx && d.getFullYear() === prevYear;
+    }) || [];
+  }, [expenses, prevMonthIdx, prevYear]);
+
+  const comparisonExpensesTotal = comparisonExpenses.reduce((acc, e) => acc + e.amount, 0);
 
   // Metrics
   const netCashFlow = monthlyIncome - monthlyExpensesTotal;
+  const comparisonNetCashFlow = monthlyIncome - comparisonExpensesTotal;
+
   const savingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - monthlyExpensesTotal) / monthlyIncome) * 100) : 0;
+  const comparisonSavingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - comparisonExpensesTotal) / monthlyIncome) * 100) : 0;
   
   // Trend Calculations
   const calculateTrend = (current: number, previous: number) => {
@@ -83,14 +95,16 @@ export default function Dashboard() {
     return Math.round(((current - previous) / previous) * 100);
   };
 
-  const expenseTrend = calculateTrend(monthlyExpensesTotal, prevMonthlyExpensesTotal);
-  
-  const prevSavingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - prevMonthlyExpensesTotal) / monthlyIncome) * 100) : 0;
-  const savingsTrend = savingsRate - prevSavingsRate; // Direct point change is better for rates
+  const expenseTrend = calculateTrend(monthlyExpensesTotal, comparisonExpensesTotal);
+  const cashFlowTrend = calculateTrend(netCashFlow, comparisonNetCashFlow);
+  const savingsTrend = savingsRate - comparisonSavingsRate; 
+
+  // Formatting helpers
+  const formatCurrency = (val: number) => `₺${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
   // --- END REAL-TIME CALCULATIONS ---
 
-  const getAggregatedCategoryData = (): ChartCategoryData[] => {
+  const categoryData = useMemo((): ChartCategoryData[] => {
     if (!categories || !expenses) return [];
     const categoryTotals = expenses.reduce((acc, expense) => {
       acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
@@ -104,12 +118,11 @@ export default function Dashboard() {
         color: cat.color || "#000",
         icon: cat.icon,
       }));
-  };
+  }, [categories, expenses]);
 
-  const getBudgetStatusData = () => {
+  const budgetStatusData = useMemo(() => {
     if (!categories || !expenses) return [];
     
-    // Map current limits from DB, fallback to DEFAULT_BUDGETS if not set
     const currentLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
     budgetLimits?.forEach(limit => {
       currentLimits[limit.categoryId] = Number(limit.limitAmount);
@@ -128,12 +141,9 @@ export default function Dashboard() {
         spent: monthlyCategoryTotals[cat.id] || 0,
         color: cat.color || "#000"
       }))
-      .filter(cat => cat.allocated > 0) // Only show categories that have a budget
+      .filter(cat => cat.allocated > 0)
       .sort((a, b) => (b.spent / b.allocated) - (a.spent / a.allocated));
-  };
-
-  const categoryData = getAggregatedCategoryData();
-  const budgetStatusData = getBudgetStatusData();
+  }, [categories, expenses, currentMonthExpenses, budgetLimits]);
 
   if (isLoading) {
     return (
@@ -147,22 +157,36 @@ export default function Dashboard() {
   const displayName = user?.name || user?.username || user?.email;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1 ">Welcome back{displayName ? (
-            <>
-              , <span className="font-bold text-foreground">{displayName}</span>
-            </>
-          ) : ''}<span className="font-bold text-foreground">!</span> Here's your financial overview.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">
+            Welcome back{displayName ? (
+              <>
+                , <span className="text-slate-900 font-bold">{displayName}</span>
+              </>
+            ) : ''}! Here's your financial overview.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 mr-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className={cn(
+              "h-10 px-4 transition-all text-xs font-bold uppercase tracking-wider", 
+              compareWithPrevious && "bg-primary/5 border-primary/20 text-primary shadow-none"
+            )}
+            onClick={() => setCompareWithPrevious(!compareWithPrevious)}
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            {compareWithPrevious ? "Comparison On" : "Compare"}
+          </Button>
+          <div className="flex items-center gap-2">
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[120px] h-10 text-xs font-bold uppercase tracking-wider">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -172,7 +196,7 @@ export default function Dashboard() {
               </SelectContent>
             </Select>
             <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-              <SelectTrigger className="w-[100px]">
+              <SelectTrigger className="w-[100px] h-10 text-xs font-bold uppercase tracking-wider">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -182,7 +206,7 @@ export default function Dashboard() {
               </SelectContent>
             </Select>
           </div>
-          <Button asChild className="gradient-primary hover:opacity-90 transition-opacity">
+          <Button asChild size="sm" className="gradient-primary h-10 px-6 font-bold uppercase tracking-widest text-xs">
             <Link to="/add-expense">
               <Plus className="w-4 h-4 mr-2" />
               Add Expense
@@ -195,54 +219,73 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <SummaryCard
           title="Net Cash Flow"
-          value={`₺${netCashFlow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatCurrency(netCashFlow)}
+          comparisonValue={compareWithPrevious ? formatCurrency(comparisonNetCashFlow) : undefined}
           icon={Wallet}
           variant={netCashFlow >= 0 ? "primary" : "warning"}
           description={netCashFlow >= 0 ? "Surplus this month" : "Deficit this month"}
+          trend={compareWithPrevious && comparisonExpensesTotal > 0 ? {
+            value: cashFlowTrend,
+            isPositive: cashFlowTrend >= 0,
+            label: "vs prev"
+          } : undefined}
         />
         <SummaryCard
           title="Monthly Income"
-          value={`₺${monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatCurrency(monthlyIncome)}
           icon={TrendingUp}
           action={<EditIncomeDialog />}
         />
         <SummaryCard
           title="Monthly Expenses"
-          value={`₺${monthlyExpensesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatCurrency(monthlyExpensesTotal)}
+          comparisonValue={compareWithPrevious ? formatCurrency(comparisonExpensesTotal) : undefined}
           icon={TrendingDown}
-          trend={prevMonthlyExpensesTotal > 0 ? { value: expenseTrend, isPositive: expenseTrend < 0 } : undefined}
+          trend={compareWithPrevious && comparisonExpensesTotal > 0 ? { 
+            value: expenseTrend, 
+            isPositive: expenseTrend < 0,
+            label: "vs prev"
+          } : undefined}
         />
         <SummaryCard
           title="Savings Rate"
           value={`${savingsRate}%`}
+          comparisonValue={compareWithPrevious ? `${comparisonSavingsRate}%` : undefined}
           icon={PiggyBank}
-          trend={prevMonthlyExpensesTotal > 0 ? { value: savingsTrend, isPositive: savingsTrend > 0 } : undefined}
+          trend={compareWithPrevious && comparisonExpensesTotal > 0 ? { 
+            value: savingsTrend, 
+            isPositive: savingsTrend > 0,
+            label: "pts vs prev"
+          } : undefined}
         />
       </div>
 
-      <AIFeatureHighlight expenses={expenses || []} />
+      {/* Full Width Cohesive List */}
+      <div className="space-y-10 sm:space-y-12">
+        <AIFeatureHighlight expenses={expenses || []} />
+        
+        <GoalsTracker />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CategoryChart data={categoryData} />
-        <div id="budget-status" className="transition-all duration-500 rounded-xl">
+        
+        <div id="budget-status">
           <BudgetStatus categories={budgetStatusData} />
         </div>
-      </div>
 
-      <div id="spending-trends" className="transition-all duration-500 rounded-xl">
-        <SpendingTrends expenses={expenses || []} />
-      </div>
-
-      <AIPredictiveChart />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div id="ai-recommendations" className="lg:col-span-2 transition-all duration-500 rounded-xl">
-          <AIRecommendations expenses={expenses || []} />
+        <div id="spending-trends">
+          <SpendingTrends expenses={expenses || []} />
         </div>
-        <AISmartAlerts expenses={expenses || []} />
-      </div>
 
-      <RecentTransactions expenses={expenses || []} />
+        <AIPredictiveChart />
+
+        <AIWhatIfSimulator />
+
+        <div id="ai-recommendations">
+           <AIRecommendations expenses={expenses || []} />
+        </div>
+
+        <RecentTransactions expenses={expenses || []} />
+      </div>
     </div>
   );
 }
