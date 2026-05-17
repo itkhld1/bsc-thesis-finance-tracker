@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Loader2 } from "lucide-react"; // Import Loader2
+import { Plus, Loader2, Download } from "lucide-react"; // Import Loader2
 import { Link } from "react-router-dom";
 import { DateRange } from "react-day-picker";
 import { ExpenseFilters } from "@/components/expense/ExpenseFilters";
@@ -7,7 +7,11 @@ import { ExpenseTable } from "@/components/expense/ExpenseTable";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useExpenses, Expense } from "@/hooks/useExpenses"; // Import useExpenses and Expense interface
+import { useCategories } from "@/hooks/useCategories";
+import { useBudget } from "@/hooks/useBudget";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card"; // Import Card for error display
+import { exportToCSV, generateFinancialPDF } from "@/lib/exportUtils";
 
 
 export default function Expenses() {
@@ -16,8 +20,12 @@ export default function Expenses() {
   const [sortBy, setSortBy] = useState("date-desc");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const { data: expenses, isLoading, isError, error } = useExpenses(); // Fetch expenses
+  const { data: categories } = useCategories();
+  const { data: budgetLimits } = useBudget();
 
   const filteredExpenses = useMemo(() => {
     if (isLoading || isError || !expenses) {
@@ -70,6 +78,43 @@ export default function Expenses() {
   }, [search, category, sortBy, dateRange, expenses, isLoading, isError]);
 
   const totalAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+  const handleExportCSV = () => {
+    const dataToExport = filteredExpenses.map(e => ({
+      Date: new Date(e.date).toLocaleDateString(),
+      Description: e.description,
+      Category: e.categoryId,
+      Amount: e.amount,
+      Notes: e.notes || ""
+    }));
+    exportToCSV(dataToExport, `aura-expenses-${new Date().toISOString().split('T')[0]}`);
+    toast({
+      title: "Export Successful",
+      description: "Your expenses have been exported to CSV.",
+    });
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!expenses || !categories || !budgetLimits) return;
+    setIsGeneratingPDF(true);
+    try {
+      const now = new Date();
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      await generateFinancialPDF({
+        month: months[now.getMonth()],
+        year: now.getFullYear(),
+        expenses,
+        categories,
+        budgetLimits,
+        user
+      });
+      toast({ title: "PDF Generated", description: "Your financial report has been downloaded." });
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to generate PDF report.", variant: "destructive" });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   const handleClearFilters = () => {
     setSearch("");
@@ -124,12 +169,22 @@ export default function Expenses() {
             Manage and track all your expenses
           </p>
         </div>
-        <Button asChild className="gradient-primary hover:opacity-90">
-          <Link to="/add-expense">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Expense
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleDownloadPDF} disabled={isGeneratingPDF} className="gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider h-9 sm:h-10 px-3 sm:px-4">
+            {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Report PDF
+          </Button>
+          <Button variant="outline" onClick={handleExportCSV} className="gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider h-9 sm:h-10 px-3 sm:px-4">
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+          <Button asChild size="sm" className="gradient-primary h-9 sm:h-10 px-3 sm:px-5 font-black uppercase tracking-widest text-[10px] shadow-md shadow-primary/20">
+            <Link to="/add-expense">
+              <Plus className="w-4 h-4 mr-2" />
+              Add
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
