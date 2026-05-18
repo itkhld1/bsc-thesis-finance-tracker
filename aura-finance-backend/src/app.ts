@@ -76,11 +76,66 @@ pool.connect()
     console.log('Connected to PostgreSQL database!');
     // Ensure tables exist
     try {
+      // 0. Create core User table first
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS "User" (
+          id SERIAL PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          name TEXT,
+          username TEXT UNIQUE,
+          income DECIMAL(10,2) DEFAULT 0,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // 0.1 Create Category table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS "Category" (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          icon TEXT,
+          color TEXT
+        )
+      `);
+
+      // 0.2 Insert default categories
+      const categories = [
+        ['food', 'Food', 'Utensils', '#ef4444'],
+        ['transport', 'Transport', 'Car', '#f59e0b'],
+        ['entertainment', 'Entertainment', 'Gamepad', '#8b5cf6'],
+        ['shopping', 'Shopping', 'ShoppingBag', '#ec4899'],
+        ['utilities', 'Utilities', 'Zap', '#3b82f6'],
+        ['health', 'Health', 'Heart', '#10b981'],
+        ['travel', 'Travel', 'Plane', '#06b6d4'],
+        ['other', 'Other', 'MoreHorizontal', '#6b7280']
+      ];
+      for (const cat of categories) {
+        await client.query(
+          'INSERT INTO "Category" (id, name, icon, color) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+          cat
+        );
+      }
+
+      // 0.3 Create Expense table (needed by others)
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS "Expense" (
+          id TEXT PRIMARY KEY,
+          amount DECIMAL(10,2) NOT NULL,
+          "categoryId" TEXT REFERENCES "Category"(id),
+          description TEXT NOT NULL,
+          date TIMESTAMP NOT NULL,
+          notes TEXT,
+          "userId" INTEGER REFERENCES "User"(id) ON DELETE CASCADE,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       await client.query('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS income DECIMAL(10,2) DEFAULT 0');
       await client.query(`
         CREATE TABLE IF NOT EXISTS "Budget" (
           id UUID PRIMARY KEY,
-          "userId" INTEGER REFERENCES "User"(id),
+          "userId" INTEGER REFERENCES "User"(id) ON DELETE CASCADE,
           "categoryId" TEXT NOT NULL,
           "limitAmount" DECIMAL(10,2) NOT NULL,
           thresholds JSONB DEFAULT '[80, 100]',
