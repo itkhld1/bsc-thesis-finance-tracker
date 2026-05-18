@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 
@@ -14,7 +15,7 @@ export interface Goal {
 
 const fetchGoals = async (token: string | null): Promise<Goal[]> => {
   if (!token) return [];
-  const response = await fetch('http://localhost:5001/goals', {
+  const response = await fetch(`${API_BASE_URL}/goals`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!response.ok) throw new Error('Failed to fetch goals');
@@ -33,7 +34,7 @@ export const useGoals = () => {
 
   const createGoalMutation = useMutation({
     mutationFn: async (newGoal: { name: string; targetAmount: number; deadline?: string; category?: string }) => {
-      const response = await fetch('http://localhost:5001/goals', {
+      const response = await fetch(`${API_BASE_URL}/goals`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ export const useGoals = () => {
 
   const updateGoalMutation = useMutation({
     mutationFn: async (goal: Partial<Goal> & { id: string }) => {
-      const response = await fetch(`http://localhost:5001/goals/${goal.id}`, {
+      const response = await fetch(`/goals/${goal.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +70,7 @@ export const useGoals = () => {
 
   const contributeMutation = useMutation({
     mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
-      const response = await fetch(`http://localhost:5001/goals/${id}/contribution`, {
+      const response = await fetch(`/goals/${id}/contribution`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ export const useGoals = () => {
 
   const deleteGoalMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`http://localhost:5001/goals/${id}`, {
+      const response = await fetch(`/goals/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

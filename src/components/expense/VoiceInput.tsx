@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useState, useRef, useEffect } from "react";
 import { Mic, MicOff, Loader2, Check, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,7 +75,7 @@ export function VoiceInput() {
     setState("processing");
 
     try {
-      const response = await fetch('http://localhost:5001/expenses/parse-voice', {
+      const response = await fetch(`${API_BASE_URL}/expenses/parse-voice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +112,7 @@ export function VoiceInput() {
     });
 
     try {
-      const response = await fetch('http://localhost:5001/expenses', {
+      const response = await fetch(`${API_BASE_URL}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

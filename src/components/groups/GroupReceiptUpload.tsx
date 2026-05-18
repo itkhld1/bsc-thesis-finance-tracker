@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useState, useCallback } from "react";
 import { Upload, Camera, Image, Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ export function GroupReceiptUpload({ onParsed, className }: GroupReceiptUploadPr
       const rawText = result.data.text;
 
       // 2. send text to backend for parsing
-      const response = await fetch('http://localhost:5001/expenses/parse-receipt', {
+      const response = await fetch(`${API_BASE_URL}/expenses/parse-receipt`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

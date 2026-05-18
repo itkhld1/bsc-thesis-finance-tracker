@@ -5,6 +5,7 @@ import { Sparkles, ArrowRight, Check, Loader2, Info } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { BudgetCategory } from "@/data/budgetData";
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface AIBudgetOptimizerProps {
   currentCategories: BudgetCategory[];
@@ -21,7 +22,7 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
   const handleOptimize = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5001/budget/optimize', {
+      const response = await fetch(`${API_BASE_URL}/budget/optimize`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

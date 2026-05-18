@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useState, useMemo, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import {
@@ -108,7 +109,7 @@ export function EditGroupExpenseDialog({ isOpen, onClose, group, expense }: Edit
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:5001/expenses/${expense.id}`, {
+      const res = await fetch(`/expenses/${expense.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface Projection {
   goalName: string;
@@ -36,7 +37,7 @@ export function AIWhatIfSimulator() {
     if (!token) return;
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5001/ai/what-if', {
+      const response = await fetch(`${API_BASE_URL}/ai/what-if`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

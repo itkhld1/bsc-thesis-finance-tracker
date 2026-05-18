@@ -4,6 +4,7 @@ import { AIBadge } from "./AIBadge";
 import { AIInsightCard } from "./AIInsightCard";
 import { Brain, Sparkles, Activity, BarChart3, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface Insight {
   type: "prediction" | "warning" | "tip" | "achievement" | "trend" | "action";
@@ -26,7 +27,7 @@ export function AIInsightsPanel() {
       if (!token) return;
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:5001/ai/insights', {
+        const res = await fetch(`${API_BASE_URL}/ai/insights`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Failed to fetch AI insights");

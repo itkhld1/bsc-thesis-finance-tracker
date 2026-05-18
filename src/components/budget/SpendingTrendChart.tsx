@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface TrendData {
   month: string;
@@ -19,7 +20,7 @@ export function SpendingTrendChart() {
     const fetchTrend = async () => {
       if (!token) return;
       try {
-        const res = await fetch('http://localhost:5001/expenses/history', {
+        const res = await fetch(`${API_BASE_URL}/expenses/history`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const history = await res.json();

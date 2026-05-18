@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,7 +63,7 @@ export function ManualEntryForm() {
     }
 
     try {
-      const response = await fetch('http://localhost:5001/expenses', {
+      const response = await fetch(`${API_BASE_URL}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

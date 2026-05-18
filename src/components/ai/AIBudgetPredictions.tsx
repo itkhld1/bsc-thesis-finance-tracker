@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Sparkles, Target, Zap, Shield, Wallet, Loader
 import { AIBadge } from "./AIBadge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface BudgetPrediction {
   category: string;
@@ -31,7 +32,7 @@ export function AIBudgetPredictions() {
       if (!token) return;
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:5001/ai/budget-predictions', {
+        const res = await fetch(`${API_BASE_URL}/ai/budget-predictions`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Failed to fetch AI budget predictions");

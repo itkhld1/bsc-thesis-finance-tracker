@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { AIBadge } from "./AIBadge";
 import { Brain, TrendingUp, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface ForecastData {
   prediction: number;
@@ -26,14 +27,14 @@ export function AIPredictiveChart() {
       setLoading(true);
       try {
         // 1. Fetch History
-        const histRes = await fetch('http://localhost:5001/expenses/history', {
+        const histRes = await fetch(`${API_BASE_URL}/expenses/history`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!histRes.ok) throw new Error("History fetch failed");
         const history = await histRes.json();
 
         // 2. Fetch Forecast
-        const foreRes = await fetch('http://localhost:5001/expenses/forecast', {
+        const foreRes = await fetch(`${API_BASE_URL}/expenses/forecast`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!foreRes.ok) throw new Error("Forecast fetch failed");

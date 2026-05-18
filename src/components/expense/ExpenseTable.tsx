@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useState, useMemo } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -95,7 +96,7 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) { // onEdit and on
       return;
     }
     try {
-      const response = await fetch(`http://localhost:5001/expenses/${expenseId}`, {
+      const response = await fetch(`/expenses/${expenseId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -129,7 +130,7 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) { // onEdit and on
     console.log("Starting batch delete for IDs:", selectedIds);
     setIsDeletingBatch(true);
     try {
-      const response = await fetch('http://localhost:5001/expenses/delete-batch', {
+      const response = await fetch(`${API_BASE_URL}/expenses/delete-batch`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

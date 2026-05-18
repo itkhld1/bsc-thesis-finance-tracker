@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useState, useMemo } from "react";
 import { ArrowLeft, Plus, ArrowRight, Receipt, Loader2, TrendingUp, TrendingDown, Info, Trash2, Handshake, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -95,7 +96,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
     setIsAddingExpense(true);
     try {
-      const res = await fetch('http://localhost:5001/expenses', {
+      const res = await fetch(`${API_BASE_URL}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +178,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     
     setIsDeleting(true);
     try {
-      const res = await fetch(`http://localhost:5001/groups/${group.id}`, {
+      const res = await fetch(`/groups/${group.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -207,7 +208,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     if (!memberEmail.trim()) return;
     setIsAddingMember(true);
     try {
-      const res = await fetch(`http://localhost:5001/groups/${group.id}/members`, {
+      const res = await fetch(`/groups/${group.id}/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -250,7 +251,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
   const handleDeleteExpense = async (expenseId: string) => {
     try {
-      const res = await fetch(`http://localhost:5001/expenses/${expenseId}`, {
+      const res = await fetch(`/expenses/${expenseId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

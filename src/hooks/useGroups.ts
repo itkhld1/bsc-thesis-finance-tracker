@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 
@@ -48,7 +49,7 @@ export interface Activity {
 
 const fetchGroups = async (token: string | null): Promise<Group[]> => {
   if (!token) return [];
-  const response = await fetch('http://localhost:5001/groups', {
+  const response = await fetch(`${API_BASE_URL}/groups`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!response.ok) throw new Error('Failed to fetch groups');
@@ -69,7 +70,7 @@ export const useGroups = () => {
     return useQuery<Activity[], Error>({
       queryKey: ['group-activity', groupId, token],
       queryFn: async () => {
-        const response = await fetch(`http://localhost:5001/groups/${groupId}/activity`, {
+        const response = await fetch(`/groups/${groupId}/activity`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) throw new Error('Failed to fetch activity');
@@ -81,7 +82,7 @@ export const useGroups = () => {
 
   const createGroupMutation = useMutation({
     mutationFn: async (newGroup: { name: string; description: string; memberEmails: string[] }) => {
-      const response = await fetch('http://localhost:5001/groups', {
+      const response = await fetch(`${API_BASE_URL}/groups`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +100,7 @@ export const useGroups = () => {
 
   const settleUpMutation = useMutation({
     mutationFn: async (settlement: { groupId: string; amount: number; recipientId: string | number; date: string }) => {
-      const response = await fetch('http://localhost:5001/expenses', {
+      const response = await fetch(`${API_BASE_URL}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

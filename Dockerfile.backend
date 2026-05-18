@@ -1,0 +1,36 @@
+# Use Node.js as the base image
+FROM node:20-slim
+
+# Install Python and build essentials
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy backend package files
+COPY aura-finance-backend/package*.json ./aura-finance-backend/
+
+# Install backend dependencies
+RUN cd aura-finance-backend && npm install
+
+# Copy AI requirements and install them
+COPY aura-finance-ai/requirements.txt ./aura-finance-ai/
+RUN pip3 install --no-cache-dir -r ./aura-finance-ai/requirements.txt --break-system-packages
+
+# Copy the rest of the application
+COPY aura-finance-backend/ ./aura-finance-backend/
+COPY aura-finance-ai/ ./aura-finance-ai/
+
+# Build the TypeScript backend
+RUN cd aura-finance-backend && npx tsc
+
+# Expose the port
+EXPOSE 5001
+
+# Start the application
+CMD ["node", "aura-finance-backend/dist/app.js"]

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 
@@ -13,7 +14,7 @@ export interface Subscription {
 
 const fetchSubscriptions = async (token: string | null): Promise<Subscription[]> => {
   if (!token) return [];
-  const response = await fetch('http://localhost:5001/expenses/subscriptions', {
+  const response = await fetch(`${API_BASE_URL}/expenses/subscriptions`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!response.ok) throw new Error('Failed to fetch subscriptions');
