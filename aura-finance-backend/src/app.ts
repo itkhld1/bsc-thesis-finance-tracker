@@ -55,7 +55,7 @@ if (!jwtSecret) throw new Error('JWT_SECRET not set');
 
 const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  ssl: {
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : {
     rejectUnauthorized: false
   }
 });
