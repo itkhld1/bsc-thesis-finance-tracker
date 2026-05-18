@@ -16,7 +16,7 @@ const fetchExpenses = async (token: string | null): Promise<Expense[]> => {
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch('http://127.0.0.1:5001/expenses', {
+  const response = await fetch(`${API_BASE_URL}/expenses`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
