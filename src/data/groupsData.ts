@@ -86,15 +86,33 @@ export function calculateDebts(group: Group): DebtCalculation[] {
   
   // Calculate balances based on expenses
   group.expenses.forEach(expense => {
-    const splitAmount = expense.amount / expense.splitBetween.length;
-    
-    // Payer gets credited
-    balances[expense.paidBy] += expense.amount;
-    
-    // Everyone who benefited gets debited
-    expense.splitBetween.forEach(memberId => {
-      balances[memberId] -= splitAmount;
-    });
+    // Check if expense has specific splits
+    if (expense.splits && expense.splits.length > 0) {
+      // Payer gets credited full amount
+      balances[expense.paidBy] += Number(expense.amount);
+      
+      // Each participant gets debited their specific share
+      expense.splits.forEach(split => {
+        let splitAmount = 0;
+        if (split.amount) {
+          splitAmount = Number(split.amount);
+        } else if (split.percentage) {
+          splitAmount = (Number(expense.amount) * Number(split.percentage)) / 100;
+        }
+        balances[split.userId] -= splitAmount;
+      });
+    } else {
+      // Fallback to equal split
+      const splitAmount = Number(expense.amount) / expense.splitBetween.length;
+      
+      // Payer gets credited
+      balances[expense.paidBy] += Number(expense.amount);
+      
+      // Everyone who benefited gets debited
+      expense.splitBetween.forEach(memberId => {
+        balances[memberId] -= splitAmount;
+      });
+    }
   });
   
   // Simplify debts
@@ -139,15 +157,33 @@ export function getUserBalance(group: Group, userId: string | number): number {
   let balance = 0;
   
   group.expenses.forEach(expense => {
-    const splitAmount = expense.amount / expense.splitBetween.length;
-    
-    // Use loose equality to match IDs regardless of type (string/number)
-    if (expense.paidBy == userId) {
-      balance += expense.amount;
-    }
-    
-    if (expense.splitBetween.some(id => id == userId)) {
-      balance -= splitAmount;
+    // Check for specific splits first
+    if (expense.splits && expense.splits.length > 0) {
+      if (expense.paidBy == userId) {
+        balance += Number(expense.amount);
+      }
+      
+      const userSplit = expense.splits.find(s => s.userId == userId);
+      if (userSplit) {
+        let splitAmount = 0;
+        if (userSplit.amount) {
+          splitAmount = Number(userSplit.amount);
+        } else if (userSplit.percentage) {
+          splitAmount = (Number(expense.amount) * Number(userSplit.percentage)) / 100;
+        }
+        balance -= splitAmount;
+      }
+    } else {
+      const splitAmount = Number(expense.amount) / expense.splitBetween.length;
+      
+      // Use loose equality to match IDs regardless of type (string/number)
+      if (expense.paidBy == userId) {
+        balance += Number(expense.amount);
+      }
+      
+      if (expense.splitBetween.some(id => id == userId)) {
+        balance -= splitAmount;
+      }
     }
   });
   

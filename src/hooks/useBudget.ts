@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 export interface BudgetLimit {
   categoryId: string;
   limitAmount: string | number;
+  thresholds?: number[];
 }
 
 const fetchBudget = async (token: string | null): Promise<BudgetLimit[]> => {

@@ -1,11 +1,12 @@
-import { Utensils, Car, Gamepad2, ShoppingBag, Zap, Heart, Plane, MoreHorizontal } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Utensils, Car, Gamepad2, ShoppingBag, Zap, Heart, Plane, MoreHorizontal, Download } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/useCategories";
 import { Loader2 } from "lucide-react";
 import { Expense } from "@/hooks/useExpenses";
+import { exportToCSV } from "@/lib/exportUtils";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Utensils,
@@ -58,15 +59,32 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
+    <Card className="overflow-hidden border-slate-100 shadow-sm">
+      <CardHeader className="pb-3 border-b border-slate-50">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/expenses" className="text-primary hover:text-primary/80">
-              View all
-            </Link>
-          </Button>
+          <div>
+            <CardTitle className="text-lg font-black tracking-tight">Recent Transactions</CardTitle>
+            <CardDescription className="text-xs">Your latest spending activity</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-widest gap-2" onClick={() => {
+              const data = expenses.map(e => ({
+                Date: new Date(e.date).toLocaleDateString(),
+                Description: e.description,
+                Amount: e.amount,
+                Category: getCategoryInfo(e.categoryId).name
+              }));
+              exportToCSV(data, "aura-recent-transactions");
+            }}>
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-bold uppercase tracking-widest">
+              <Link to="/expenses" className="text-primary hover:text-primary/80">
+                View all
+              </Link>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">

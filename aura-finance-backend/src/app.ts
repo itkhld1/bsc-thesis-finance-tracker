@@ -55,6 +55,17 @@ if (!jwtSecret) throw new Error('JWT_SECRET not set');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
+const logActivity = async (groupId: string, userId: number | undefined, type: string, description: string) => {
+  try {
+    await pool.query(
+      'INSERT INTO "Activity" (id, "groupId", "userId", type, description) VALUES ($1, $2, $3, $4, $5)',
+      [uuidv4(), groupId, userId || null, type, description]
+    );
+  } catch (error) {
+    console.error('Error logging activity:', (error as Error).message);
+  }
+};
+
 pool.connect()
   .then(async client => {
     console.log('Connected to PostgreSQL database!');
@@ -67,9 +78,13 @@ pool.connect()
           "userId" INTEGER REFERENCES "User"(id),
           "categoryId" TEXT NOT NULL,
           "limitAmount" DECIMAL(10,2) NOT NULL,
+          thresholds JSONB DEFAULT '[80, 100]',
           UNIQUE("userId", "categoryId")
         )
       `);
+
+      // Add thresholds column if it doesn't exist (for existing tables)
+      await client.query('ALTER TABLE "Budget" ADD COLUMN IF NOT EXISTS thresholds JSONB DEFAULT \'[80, 100]\'');
 
        // 1. The "Group" table stores the group name and description
        await client.query(`
@@ -94,6 +109,50 @@ pool.connect()
 
        // 3. This adds a "groupId" tag to your expenses so we know if an expense belongs to a group
        await client.query('ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "groupId" UUID REFERENCES "Group"(id) ON DELETE SET NULL');
+       
+       // 4. Add recipientId for settlements
+       await client.query('ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "recipientId" INTEGER REFERENCES "User"(id) ON DELETE SET NULL');
+
+       // 5. Create ExpenseSplit table
+       await client.query(`
+         CREATE TABLE IF NOT EXISTS "ExpenseSplit" (
+           id TEXT PRIMARY KEY,
+           "expenseId" TEXT REFERENCES "Expense"(id) ON DELETE CASCADE,
+           "userId" INTEGER REFERENCES "User"(id) ON DELETE CASCADE,
+           amount DECIMAL(10,2),
+           percentage DECIMAL(5,2),
+           UNIQUE("expenseId", "userId")
+         )
+       `);
+
+       // 6. Create Activity table
+       await client.query(`
+         CREATE TABLE IF NOT EXISTS "Activity" (
+           id UUID PRIMARY KEY,
+           "groupId" UUID REFERENCES "Group"(id) ON DELETE CASCADE,
+           "userId" INTEGER REFERENCES "User"(id) ON DELETE SET NULL,
+           type TEXT NOT NULL,
+           description TEXT NOT NULL,
+           "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+         )
+       `);
+
+       // 7. Create Goal table
+       await client.query(`
+         CREATE TABLE IF NOT EXISTS "Goal" (
+           id UUID PRIMARY KEY,
+           "userId" INTEGER REFERENCES "User"(id) ON DELETE CASCADE,
+           name TEXT NOT NULL,
+           "targetAmount" DECIMAL(10,2) NOT NULL,
+           "currentAmount" DECIMAL(10,2) DEFAULT 0,
+           deadline DATE,
+           category TEXT,
+           "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+         )
+       `);
+
+       // Ensure Settlement category exists
+       await client.query("INSERT INTO \"Category\" (id, name, icon, color) VALUES ('settlement', 'Settlement', 'Handshake', '#10b981') ON CONFLICT (name) DO NOTHING");
     } catch (e) {
       console.log('Database migration log:', (e as Error).message);
     }
@@ -120,7 +179,7 @@ const protect = (req: Request, res: Response, next: NextFunction) => {
 // BUDGET ENDPOINTS
 app.get('/budget', protect, async (req, res) => {
   try {
-    const result = await pool.query('SELECT "categoryId", "limitAmount" FROM "Budget" WHERE "userId" = $1', [req.user?.id]);
+    const result = await pool.query('SELECT "categoryId", "limitAmount", thresholds FROM "Budget" WHERE "userId" = $1', [req.user?.id]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching budget' });
@@ -128,12 +187,12 @@ app.get('/budget', protect, async (req, res) => {
 });
 
 app.post('/budget', protect, async (req, res) => {
-  const { budgets } = req.body; // Array of { categoryId, limitAmount }
+  const { budgets } = req.body; // Array of { categoryId, limitAmount, thresholds }
   try {
     for (const b of budgets) {
       await pool.query(
-        'INSERT INTO "Budget" (id, "userId", "categoryId", "limitAmount") VALUES ($1, $2, $3, $4) ON CONFLICT ("userId", "categoryId") DO UPDATE SET "limitAmount" = EXCLUDED."limitAmount"',
-        [uuidv4(), req.user?.id, b.categoryId, b.limitAmount]
+        'INSERT INTO "Budget" (id, "userId", "categoryId", "limitAmount", thresholds) VALUES ($1, $2, $3, $4, $5) ON CONFLICT ("userId", "categoryId") DO UPDATE SET "limitAmount" = EXCLUDED."limitAmount", thresholds = EXCLUDED.thresholds',
+        [uuidv4(), req.user?.id, b.categoryId, b.limitAmount, JSON.stringify(b.thresholds || [80, 100])]
       );
     }
     res.json({ message: "Budget updated successfully" });
@@ -166,16 +225,29 @@ app.get('/groups', protect, async (req, res) => {
         WHERE gm."groupId" = $1
       `, [group.id]);
 
+      group.members = membersResult.rows;
+
       const expensesResult = await pool.query(`
         SELECT * FROM "Expense" WHERE "groupId" = $1 ORDER BY date DESC
       `, [group.id]);
 
-      group.members = membersResult.rows;
-      group.expenses = expensesResult.rows.map(e => ({
-        ...e,
-        paidBy: e.userId,
-        splitBetween: group.members.map((m: { id: number }) => m.id) // Default split between all for now
-      }));
+      const expenses = expensesResult.rows;
+
+      for (const exp of expenses) {
+        const splitsResult = await pool.query(`
+          SELECT "userId", amount, percentage FROM "ExpenseSplit" WHERE "expenseId" = $1
+        `, [exp.id]);
+        
+        exp.paidBy = exp.userId;
+        if (splitsResult.rows.length > 0) {
+          exp.splits = splitsResult.rows;
+          exp.splitBetween = splitsResult.rows.map(s => s.userId);
+        } else {
+          exp.splitBetween = exp.recipientId ? [exp.recipientId] : group.members.map((m: { id: number }) => m.id);
+        }
+      }
+
+      group.expenses = expenses;
     }
     res.json(groups);
   } catch (error) {
@@ -219,6 +291,7 @@ app.get('/groups', protect, async (req, res) => {
    }
 
    await pool.query('COMMIT');
+   await logActivity(groupId, userId, 'GROUP_CREATED', `Group "${name}" was created`);
    res.status(201).json({ id: groupId, name, description });
  } catch (error) {
    await pool.query('ROLLBACK');
@@ -268,6 +341,68 @@ app.put('/auth/user', protect, async (req, res) => {
   }
 });
 
+// --- GOAL ENDPOINTS ---
+app.get('/goals', protect, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM "Goal" WHERE "userId" = $1 ORDER BY "createdAt" DESC', [req.user?.id]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching goals', details: (error as Error).message });
+  }
+});
+
+app.post('/goals', protect, async (req, res) => {
+  const { name, targetAmount, deadline, category } = req.body;
+  const id = uuidv4();
+  try {
+    const result = await pool.query(
+      'INSERT INTO "Goal" (id, "userId", name, "targetAmount", deadline, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [id, req.user?.id, name, targetAmount, deadline || null, category || 'other']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating goal', details: (error as Error).message });
+  }
+});
+
+app.patch('/goals/:id/contribution', protect, async (req, res) => {
+  const { amount } = req.body;
+  const goalId = req.params.id;
+  try {
+    const result = await pool.query(
+      'UPDATE "Goal" SET "currentAmount" = "currentAmount" + $1 WHERE id = $2 AND "userId" = $3 RETURNING *',
+      [amount, goalId, req.user?.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Goal not found' });
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating goal contribution', details: (error as Error).message });
+  }
+});
+
+app.put('/goals/:id', protect, async (req, res) => {
+  const { name, targetAmount, currentAmount, deadline, category } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE "Goal" SET name=$1, "targetAmount"=$2, "currentAmount"=$3, deadline=$4, category=$5 WHERE id=$6 AND "userId"=$7 RETURNING *',
+      [name, targetAmount, currentAmount, deadline, category, req.params.id, req.user?.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Goal not found' });
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: 'Update error', details: (error as Error).message });
+  }
+});
+
+app.delete('/goals/:id', protect, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM "Goal" WHERE id=$1 AND "userId"=$2', [req.params.id, req.user?.id]);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: 'Delete error', details: (error as Error).message });
+  }
+});
+
 // 3. Add a member to a group
 app.post('/groups/:id/members', protect, async (req, res) => {
   const { email } = req.body;
@@ -284,6 +419,9 @@ app.post('/groups/:id/members', protect, async (req, res) => {
       'INSERT INTO "GroupMember" ("groupId", "userId") VALUES ($1, $2) ON CONFLICT DO NOTHING',
       [groupId, userIdToAdd]
     );
+
+    const userInfoRes = await pool.query('SELECT name FROM "User" WHERE id = $1', [userIdToAdd]);
+    await logActivity(groupId, req.user?.id, 'MEMBER_ADDED', `Added ${userInfoRes.rows[0].name} to the group`);
 
     res.json({ message: 'Member added successfully' });
   } catch (error) {
@@ -315,6 +453,22 @@ app.delete('/groups/:id', protect, async (req: Request, res: Response) => {
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ message: 'Error deleting group', details: (error as Error).message });
+  }
+});
+
+// 6. Fetch group activity
+app.get('/groups/:id/activity', protect, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT a.*, u.name as "userName" FROM "Activity" a
+      LEFT JOIN "User" u ON a."userId" = u.id
+      WHERE a."groupId" = $1
+      ORDER BY a."createdAt" DESC
+      LIMIT 50
+    `, [req.params.id]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching activity', details: (error as Error).message });
   }
 });
 
@@ -708,29 +862,78 @@ app.get('/expenses', protect, async (req, res) => {
 });
 
 app.post('/expenses', protect, async (req, res) => {
-  const { amount, categoryId, description, date, notes, groupId } = req.body;
+  const { amount, categoryId, description, date, notes, groupId, recipientId, splits } = req.body;
   const id = uuidv4();
   try {
+    await pool.query('BEGIN');
+
     const result = await pool.query(
-      'INSERT INTO "Expense" (id, amount, "categoryId", description, date, notes, "userId", "groupId") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [id, amount, categoryId, description, date, notes, req.user?.id, groupId || null]
+      'INSERT INTO "Expense" (id, amount, "categoryId", description, date, notes, "userId", "groupId", "recipientId") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [id, amount, categoryId, description, date, notes, req.user?.id, groupId || null, recipientId || null]
     );
+
+    if (splits && Array.isArray(splits)) {
+      for (const split of splits) {
+        await pool.query(
+          'INSERT INTO "ExpenseSplit" (id, "expenseId", "userId", amount, percentage) VALUES ($1, $2, $3, $4, $5)',
+          [uuidv4(), id, split.userId, split.amount || null, split.percentage || null]
+        );
+      }
+    }
+
+    await pool.query('COMMIT');
+
+    if (groupId) {
+      const type = categoryId === 'settlement' ? 'SETTLEMENT_ADDED' : 'EXPENSE_ADDED';
+      const action = categoryId === 'settlement' ? 'recorded a settlement' : `added "${description}"`;
+      await logActivity(groupId, req.user?.id, type, action);
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    await pool.query('ROLLBACK');
     res.status(500).json({ message: 'Error adding expense', details: (error as Error).message });
   }
 });
 
 app.put('/expenses/:id', protect, async (req, res) => {
-  const { amount, categoryId, description, date, notes } = req.body;
+  const { amount, categoryId, description, date, notes, groupId, splits } = req.body;
+  const expenseId = req.params.id;
   try {
+    await pool.query('BEGIN');
+
     const result = await pool.query(
       'UPDATE "Expense" SET amount=$1, "categoryId"=$2, description=$3, date=$4, notes=$5 WHERE id=$6 AND "userId"=$7 RETURNING *',
-      [amount, categoryId, description, date, notes, req.params.id, req.user?.id]
+      [amount, categoryId, description, date, notes, expenseId, req.user?.id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: 'Expense not found' });
+
+    if (result.rows.length === 0) {
+      await pool.query('ROLLBACK');
+      return res.status(404).json({ message: 'Expense not found' });
+    }
+
+    // If it's a group expense, update splits
+    if (groupId) {
+      await pool.query('DELETE FROM "ExpenseSplit" WHERE "expenseId" = $1', [expenseId]);
+      if (splits && Array.isArray(splits)) {
+        for (const split of splits) {
+          await pool.query(
+            'INSERT INTO "ExpenseSplit" (id, "expenseId", "userId", amount, percentage) VALUES ($1, $2, $3, $4, $5)',
+            [uuidv4(), expenseId, split.userId, split.amount || null, split.percentage || null]
+          );
+        }
+      }
+    }
+
+    await pool.query('COMMIT');
+
+    if (groupId) {
+      await logActivity(groupId, req.user?.id, 'EXPENSE_UPDATED', `updated "${description}"`);
+    }
+
     res.json(result.rows[0]);
   } catch (error) {
+    await pool.query('ROLLBACK');
     res.status(500).json({ message: 'Update error', details: (error as Error).message });
   }
 });
@@ -754,7 +957,15 @@ app.post('/expenses/delete-batch', protect, async (req, res) => {
 
 app.delete('/expenses/:id', protect, async (req, res) => {
   try {
+    const expenseRes = await pool.query('SELECT description, "groupId" FROM "Expense" WHERE id = $1 AND "userId" = $2', [req.params.id, req.user?.id]);
+    const expense = expenseRes.rows[0];
+
     await pool.query('DELETE FROM "Expense" WHERE id=$1 AND "userId"=$2', [req.params.id, req.user?.id]);
+    
+    if (expense && expense.groupId) {
+      await logActivity(expense.groupId, req.user?.id, 'EXPENSE_DELETED', `deleted "${expense.description}"`);
+    }
+
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ message: 'Delete error', details: (error as Error).message });
@@ -1132,6 +1343,125 @@ app.get('/budget/optimize', protect, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user data' });
+  }
+});
+
+app.post('/ai/what-if', protect, async (req, res) => {
+  const { categoryId, reductionPercentage } = req.body;
+  const userId = req.user?.id;
+
+  try {
+    // 1. Get current income
+    const userRes = await pool.query('SELECT income FROM "User" WHERE id = $1', [userId]);
+    const income = Number(userRes.rows[0]?.income) || 0;
+
+    // 2. Get goals
+    const goalsRes = await pool.query('SELECT * FROM "Goal" WHERE "userId" = $1', [userId]);
+    const goals = goalsRes.rows;
+
+    // 3. Get average spending for the category (last 30 days)
+    const categorySpendRes = await pool.query(`
+      SELECT SUM(amount) as total FROM "Expense" 
+      WHERE "userId" = $1 AND "categoryId" = $2 AND date >= (CURRENT_DATE - INTERVAL '30 days')
+    `, [userId, categoryId]);
+    
+    const monthlyCategorySpend = Number(categorySpendRes.rows[0]?.total) || 0;
+
+    // 4. Calculate monthly surplus
+    const totalSpendRes = await pool.query(`
+      SELECT SUM(amount) as total FROM "Expense" 
+      WHERE "userId" = $1 AND date >= (CURRENT_DATE - INTERVAL '30 days')
+    `, [userId]);
+    const totalMonthlySpend = Number(totalSpendRes.rows[0]?.total) || 0;
+    const currentSurplus = Math.max(0, income - totalMonthlySpend);
+
+    // 5. Calculate simulation
+    const potentialMonthlySavings = (monthlyCategorySpend * (reductionPercentage / 100));
+    const newMonthlySurplus = currentSurplus + potentialMonthlySavings;
+
+    const projections = goals.map(goal => {
+      const remainingAmount = Number(goal.targetAmount) - Number(goal.currentAmount);
+      
+      const currentMonths = currentSurplus > 0 ? Math.ceil(remainingAmount / currentSurplus) : Infinity;
+      const newMonths = newMonthlySurplus > 0 ? Math.ceil(remainingAmount / newMonthlySurplus) : Infinity;
+      
+      return {
+        goalName: goal.name,
+        currentMonthsToGoal: currentMonths === Infinity ? null : currentMonths,
+        newMonthsToGoal: newMonths === Infinity ? null : newMonths,
+        monthsSaved: currentMonths !== Infinity && newMonths !== Infinity ? currentMonths - newMonths : null,
+      };
+    });
+
+    res.json({
+      categoryId,
+      reductionPercentage,
+      potentialMonthlySavings,
+      newMonthlySurplus,
+      projections
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Simulation error', details: (error as Error).message });
+  }
+});
+
+app.get('/expenses/subscriptions', protect, async (req, res) => {
+  const userId = req.user?.id;
+  try {
+    // 1. Fetch all expenses for the last 6 months to find patterns
+    const result = await pool.query(`
+      SELECT description, amount, date, "categoryId" 
+      FROM "Expense" 
+      WHERE "userId" = $1 AND date >= (CURRENT_DATE - INTERVAL '6 months')
+      ORDER BY date DESC
+    `, [userId]);
+
+    const expenses = result.rows;
+    const groups: Record<string, any[]> = {};
+
+    // 2. Group by normalized description
+    expenses.forEach(e => {
+      const desc = e.description.toLowerCase().trim();
+      if (!groups[desc]) groups[desc] = [];
+      groups[desc].push(e);
+    });
+
+    // 3. Filter for recurring patterns
+    const subscriptions = Object.entries(groups)
+      .map(([name, items]) => {
+        if (items.length < 2) return null;
+
+        // Calculate average days between occurrences
+        const dates = items.map(i => new Date(i.date).getTime()).sort((a, b) => a - b);
+        const diffs = [];
+        for (let i = 1; i < dates.length; i++) {
+          diffs.push((dates[i] - dates[i-1]) / (1000 * 60 * 60 * 24));
+        }
+
+        const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+        const isRecurring = avgDiff >= 25 && avgDiff <= 35; // Rough monthly check
+
+        if (!isRecurring && items.length < 3) return null;
+
+        const avgAmount = items.reduce((a, b) => a + Number(b.amount), 0) / items.length;
+        
+        return {
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          monthlyCost: avgAmount,
+          yearlyCost: avgAmount * 12,
+          lastDate: items[0].date,
+          count: items.length,
+          categoryId: items[0].categoryId,
+          confidence: isRecurring ? 'High' : 'Medium'
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b!.monthlyCost - a!.monthlyCost);
+
+    res.json(subscriptions);
+  } catch (error) {
+    res.status(500).json({ message: 'Detection error', details: (error as Error).message });
   }
 });
 
