@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExLCJlbWFpbCI6ImV4YW1wbGVAZXhhbXBsZS5jb20iLCJpYXQiOjE3Nzg3OTAxNzksImV4cCI6MTc3OTM5NDk3OX0.4KKeeENQMvL9zA-_91sNhnttXAiLvlWR07x_0b9_R_k";
+const TOKEN = "USER_TOKEN";
 const API_URL = "http://localhost:5001/expenses";
 
 const categories = [
