@@ -406,7 +406,7 @@ app.delete('/goals/:id', protect, async (req, res) => {
 // 3. Add a member to a group
 app.post('/groups/:id/members', protect, async (req, res) => {
   const { email } = req.body;
-  const groupId = req.params.id;
+  const groupId = req.params.id as string;
 
   try {
     const userRes = await pool.query('SELECT id FROM "User" WHERE email = $1', [email]);
@@ -963,7 +963,7 @@ app.delete('/expenses/:id', protect, async (req, res) => {
     await pool.query('DELETE FROM "Expense" WHERE id=$1 AND "userId"=$2', [req.params.id, req.user?.id]);
     
     if (expense && expense.groupId) {
-      await logActivity(expense.groupId, req.user?.id, 'EXPENSE_DELETED', `deleted "${expense.description}"`);
+      await logActivity(expense.groupId as string, req.user?.id, 'EXPENSE_DELETED', `deleted "${expense.description}"`);
     }
 
     res.status(204).send();
