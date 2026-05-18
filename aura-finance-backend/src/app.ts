@@ -53,7 +53,12 @@ declare global {
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL not set');
 if (!jwtSecret) throw new Error('JWT_SECRET not set');
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 const logActivity = async (groupId: string, userId: number | undefined, type: string, description: string) => {
   try {
