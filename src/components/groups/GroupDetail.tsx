@@ -277,11 +277,11 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {user?.id === group.createdBy && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 font-bold uppercase tracking-wider text-[10px] h-9 px-4">
+                <Button variant="outline" size="sm" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 font-bold uppercase tracking-wider text-[10px] h-9 px-4 flex-1 sm:flex-none">
                   <Trash2 className="w-3.5 h-3.5 mr-2" />
                   Delete Group
                 </Button>
@@ -302,11 +302,11 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               </AlertDialogContent>
             </AlertDialog>
           )}
-          <Button variant="outline" size="sm" className="h-9 px-4 font-bold uppercase tracking-wider text-[10px]" onClick={() => setSettleUpOpen(true)}>
+          <Button variant="outline" size="sm" className="h-9 px-4 font-bold uppercase tracking-wider text-[10px] flex-1 sm:flex-none" onClick={() => setSettleUpOpen(true)}>
             <Handshake className="w-3.5 h-3.5 mr-2" />
             Settle Up
           </Button>
-          <Button size="sm" className="gradient-primary h-9 px-4 font-bold uppercase tracking-wider text-[10px]" onClick={() => setAddExpenseOpen(true)}>
+          <Button size="sm" className="gradient-primary h-9 px-4 font-bold uppercase tracking-wider text-[10px] flex-1 sm:flex-none" onClick={() => setAddExpenseOpen(true)}>
             <Plus className="w-3.5 h-3.5 mr-2" />
             Add Expense
           </Button>

@@ -61,13 +61,13 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
   return (
     <Card className="overflow-hidden border-slate-100 shadow-sm">
       <CardHeader className="pb-3 border-b border-slate-50">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-lg font-black tracking-tight">Recent Transactions</CardTitle>
             <CardDescription className="text-xs">Your latest spending activity</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-widest gap-2" onClick={() => {
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-widest gap-2 flex-1 sm:flex-none" onClick={() => {
               const data = expenses.map(e => ({
                 Date: new Date(e.date).toLocaleDateString(),
                 Description: e.description,
@@ -79,7 +79,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
               <Download className="w-3.5 h-3.5" />
               Export
             </Button>
-            <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-bold uppercase tracking-widest">
+            <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-bold uppercase tracking-widest flex-1 sm:flex-none">
               <Link to="/expenses" className="text-primary hover:text-primary/80">
                 View all
               </Link>

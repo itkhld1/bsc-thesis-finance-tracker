@@ -71,13 +71,13 @@ export function AIInsightsPanel() {
   return (
     <Card className="border-primary/20 gradient-ai-subtle overflow-hidden">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2.5 rounded-xl gradient-ai animate-scale-pulse">
+            <div className="p-2.5 rounded-xl gradient-ai animate-scale-pulse flex-shrink-0">
               <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 AI Financial Insights
                 <AIBadge variant="inline" />
               </div>
@@ -87,14 +87,14 @@ export function AIInsightsPanel() {
             </div>
           </CardTitle>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50 flex-1 sm:flex-none justify-center">
               <Activity className="w-4 h-4 text-success animate-pulse" />
-              <span className="text-xs font-medium text-muted-foreground">Live Analysis</span>
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Live Analysis</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50 flex-1 sm:flex-none justify-center">
               <BarChart3 className="w-4 h-4 text-primary" />
-              <span className="text-xs font-medium text-muted-foreground">{insights.length} insights</span>
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{insights.length} insights</span>
             </div>
           </div>
         </div>
