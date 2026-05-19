@@ -130,14 +130,14 @@ export function AIPredictiveChart() {
 
   return (
     <Card className="border-primary/20 gradient-ai-subtle overflow-hidden">
-      <CardHeader className="pb-2 p-4 sm:p-6">
+      <CardHeader className="pb-2 p-4 sm:p-6 p-3 sm:p-6 pb-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl gradient-ai shadow-lg shadow-primary/20">
               <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+              <CardTitle className="text-xs sm:text-base sm:text-sm sm:text-lg font-semibold flex items-center gap-2">
                 Predictive Spending Analysis
                 <AIBadge variant="inline" />
               </CardTitle>
@@ -157,7 +157,7 @@ export function AIPredictiveChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] mt-6">
+        <div className="h-[180px] sm:h-[300px] mt-6">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 35, right: 15, left: 0, bottom: 0 }}>
               <defs>
@@ -183,7 +183,7 @@ export function AIPredictiveChart() {
                 }}
                 formatter={(value: any, name: string, props: any) => [
                   <div key={name} className="flex flex-col gap-0.5">
-                    <span className="font-bold text-base text-foreground">₺{value?.toLocaleString()}</span>
+                    <span className="font-bold text-xs sm:text-base text-foreground">₺{value?.toLocaleString()}</span>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       {name === "actual" ? "Actual Spending" : `AI Prediction (${props.payload.confidence}% Conf.)`}
                     </span>

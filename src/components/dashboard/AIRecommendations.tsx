@@ -120,9 +120,9 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
 
   return (
     <Card className="border-[#E5E7EB] bg-white overflow-hidden relative h-full">
-      <CardHeader className="pb-2 p-4 sm:p-6 relative">
+      <CardHeader className="pb-2 p-4 sm:p-6 relative p-3 sm:p-6 pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base sm:text-sm sm:text-lg font-semibold">
             <div className="p-2 rounded-xl bg-[#0D9488]/10 flex-shrink-0">
               <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-[#0D9488]" />
             </div>
@@ -139,7 +139,7 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="relative p-4 sm:p-6 pt-2">
+      <CardContent className="relative p-4 sm:p-6 pt-2 p-3 sm:p-6">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
           {recommendations.map((rec, index) => {
             const styles = typeStyles[rec.type as keyof typeof typeStyles] || typeStyles.success;

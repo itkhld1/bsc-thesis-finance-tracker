@@ -29,12 +29,12 @@ export function CategoryChart({ data }: CategoryChartProps) {
 
   return (
     <Card className="overflow-hidden border-slate-100 shadow-sm h-full">
-      <CardHeader className="pb-2 p-4 sm:p-6">
-        <CardTitle className="text-base sm:text-lg font-bold">Spending by Category</CardTitle>
+      <CardHeader className="pb-2 p-4 sm:p-6 p-3 sm:p-6 pb-2">
+        <CardTitle className="text-xs sm:text-base sm:text-sm sm:text-lg font-bold">Spending by Category</CardTitle>
         <CardDescription className="text-xs">Distribution across all categories</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[200px] sm:h-[280px]">
+        <div className="h-[150px] sm:h-[200px] sm:h-[180px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

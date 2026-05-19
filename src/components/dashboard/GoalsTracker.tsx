@@ -61,7 +61,7 @@ export function GoalsTracker() {
   if (isLoading) {
     return (
       <Card className="border-slate-100 shadow-sm">
-        <CardContent className="flex items-center justify-center py-12">
+        <CardContent className="flex items-center justify-center py-12 p-3 sm:p-6">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </CardContent>
       </Card>
@@ -70,9 +70,9 @@ export function GoalsTracker() {
 
   return (
     <Card className="border-slate-100 shadow-sm flex flex-col h-fit">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6 pb-2">
         <div>
-          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+          <CardTitle className="text-sm sm:text-lg sm:text-xl font-bold flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
             Savings Goals
           </CardTitle>
@@ -80,7 +80,7 @@ export function GoalsTracker() {
         </div>
         <AddGoalDialog />
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
+      <CardContent className="flex-1 overflow-hidden p-3 sm:p-6">
         {goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
