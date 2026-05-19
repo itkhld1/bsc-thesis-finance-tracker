@@ -70,7 +70,7 @@ export const useGroups = () => {
     return useQuery<Activity[], Error>({
       queryKey: ['group-activity', groupId, token],
       queryFn: async () => {
-        const response = await fetch(`/groups/${groupId}/activity`, {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/activity`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) throw new Error('Failed to fetch activity');

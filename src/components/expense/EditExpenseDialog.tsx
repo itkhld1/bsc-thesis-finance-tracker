@@ -88,7 +88,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
     }
 
     try {
-      const response = await fetch(`/expenses/${expense.id}`, {
+      const response = await fetch(`${API_BASE_URL}/expenses/${expense.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -284,6 +284,9 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
           </form>
         </Form>
       </DialogContent>
+    </Dialog>
+  );
+}ialogContent>
     </Dialog>
   );
 }

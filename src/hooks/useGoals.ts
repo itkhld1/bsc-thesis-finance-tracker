@@ -52,7 +52,7 @@ export const useGoals = () => {
 
   const updateGoalMutation = useMutation({
     mutationFn: async (goal: Partial<Goal> & { id: string }) => {
-      const response = await fetch(`/goals/${goal.id}`, {
+      const response = await fetch(`${API_BASE_URL}/goals/${goal.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export const useGoals = () => {
 
   const contributeMutation = useMutation({
     mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
-      const response = await fetch(`/goals/${id}/contribution`, {
+      const response = await fetch(`${API_BASE_URL}/goals/${id}/contribution`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ export const useGoals = () => {
 
   const deleteGoalMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/goals/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

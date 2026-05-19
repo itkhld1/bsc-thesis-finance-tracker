@@ -178,7 +178,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     
     setIsDeleting(true);
     try {
-      const res = await fetch(`/groups/${group.id}`, {
+      const res = await fetch(`${API_BASE_URL}/groups/${group.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -251,7 +251,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
   const handleDeleteExpense = async (expenseId: string) => {
     try {
-      const res = await fetch(`/expenses/${expenseId}`, {
+      const res = await fetch(`${API_BASE_URL}/expenses/${expenseId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

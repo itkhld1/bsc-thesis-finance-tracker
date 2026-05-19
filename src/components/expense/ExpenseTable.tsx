@@ -96,7 +96,7 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) { // onEdit and on
       return;
     }
     try {
-      const response = await fetch(`/expenses/${expenseId}`, {
+      const response = await fetch(`${API_BASE_URL}/expenses/${expenseId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
