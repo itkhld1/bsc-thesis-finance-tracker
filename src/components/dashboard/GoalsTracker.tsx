@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Target, TrendingUp, MoreVertical, Trash2, Edit2, Plus, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent className="p-4 sm:p-6 pt-0", CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -61,9 +61,9 @@ export function GoalsTracker() {
   if (isLoading) {
     return (
       <Card className="border-slate-100 shadow-sm">
-        <CardContent className="flex items-center justify-center py-12">
+        <CardContent className="p-4 sm:p-6 pt-0" className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </CardContent>
+        </CardContent className="p-4 sm:p-6 pt-0">
       </Card>
     );
   }
@@ -72,7 +72,7 @@ export function GoalsTracker() {
     <Card className="border-slate-100 shadow-sm flex flex-col h-fit">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
+          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
             Savings Goals
           </CardTitle>
@@ -80,7 +80,7 @@ export function GoalsTracker() {
         </div>
         <AddGoalDialog />
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
+      <CardContent className="p-4 sm:p-6 pt-0" className="flex-1 overflow-hidden">
         {goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
@@ -165,7 +165,7 @@ export function GoalsTracker() {
             })}
           </div>
         )}
-      </CardContent>
+      </CardContent className="p-4 sm:p-6 pt-0">
 
       <Dialog open={contributionOpen} onOpenChange={setContributionOpen}>
         <DialogContent className="sm:max-w-[400px]">

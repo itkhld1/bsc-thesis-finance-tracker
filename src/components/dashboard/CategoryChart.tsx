@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent className="p-4 sm:p-6 pt-0", CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PieChart as PieIcon } from "lucide-react";
 
 // Define the shape of data expected by CategoryChart, matching Dashboard's aggregation
@@ -29,12 +29,12 @@ export function CategoryChart({ data }: CategoryChartProps) {
 
   return (
     <Card className="overflow-hidden border-slate-100 shadow-sm h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-bold">Spending by Category</CardTitle>
+      <CardHeader className="pb-2 p-4 sm:p-6">
+        <CardTitle className="text-base sm:text-lg font-bold">Spending by Category</CardTitle>
         <CardDescription className="text-xs">Distribution across all categories</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-[280px]">
+      <CardContent className="p-4 sm:p-6 pt-0">
+        <div className="h-[200px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -71,7 +71,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
+      </CardContent className="p-4 sm:p-6 pt-0">
     </Card>
   );
 }

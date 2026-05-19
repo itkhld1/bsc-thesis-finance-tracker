@@ -62,8 +62,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex items-center gap-3 group cursor-pointer">
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-emerald-400 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500" />
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-emerald-500 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Wallet className="w-5 h-5 text-white" />
+            <div className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-primary/10 overflow-hidden border border-slate-100">
+              <img src="/AuraFinanceLogo.png" alt="Aura Finance" className="w-8 h-8 object-contain" />
             </div>
           </div>
           <div className="flex flex-col">

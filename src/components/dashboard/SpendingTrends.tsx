@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent className="p-4 sm:p-6 pt-0", CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Expense } from "@/hooks/useExpenses";
@@ -73,9 +73,9 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
 
   return (
     <Card className="overflow-hidden h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <CardTitle className="text-lg font-semibold">Spending Trends</CardTitle>
+          <CardTitle className="text-base sm:text-lg font-semibold">Spending Trends</CardTitle>
           <div className="flex gap-2">
             <div className="flex bg-muted rounded-lg p-1">
               <Button
@@ -128,8 +128,8 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[280px]">
+      <CardContent className="p-4 sm:p-6 pt-0">
+        <div className="h-[200px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (
               <BarChart data={chartData}>
@@ -197,7 +197,7 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
             )}
           </ResponsiveContainer>
         </div>
-      </CardContent>
+      </CardContent className="p-4 sm:p-6 pt-0">
     </Card>
   );
 }

@@ -120,30 +120,27 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
 
   return (
     <Card className="border-[#E5E7EB] bg-white overflow-hidden relative h-full">
-      <CardHeader className="pb-3 relative">
+      <CardHeader className="pb-2 p-4 sm:p-6 relative">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2.5 rounded-xl bg-[#0D9488]/10">
-              <Brain className="w-5 h-5 text-[#0D9488]" />
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
+            <div className="p-2 rounded-xl bg-[#0D9488]/10 flex-shrink-0">
+              <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-[#0D9488]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                AI Insights & Recommendations
-                <AIBadge variant="inline" animated={false} />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="truncate">AI Insights</span>
+                <AIBadge variant="small" animated={false} />
               </div>
-              <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                Dynamic analysis of your real spending
-              </p>
             </div>
           </CardTitle>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F9FAFB] border border-[#F3F4F6]">
-            <Zap className="w-4 h-4 text-[#0D9488]" />
-            <span className="text-xs font-medium text-muted-foreground">{recommendations.length} insights</span>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#F9FAFB] border border-[#F3F4F6] flex-shrink-0 scale-90 sm:scale-100 origin-right">
+            <Zap className="w-3.5 h-3.5 text-[#0D9488]" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">{recommendations.length}</span>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="relative">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+      <CardContent className="relative p-4 sm:p-6 pt-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
           {recommendations.map((rec, index) => {
             const styles = typeStyles[rec.type as keyof typeof typeStyles] || typeStyles.success;
             const Icon = rec.icon;
@@ -152,32 +149,31 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
               <div
                 key={rec.id}
                 className={cn(
-                  "group relative p-4 rounded-xl border transition-all duration-300 hover:shadow-md",
+                  "group relative p-3 sm:p-4 rounded-xl border transition-all duration-300 hover:shadow-md",
                   styles.bg,
                   styles.border,
                   index === 2 ? "sm:col-span-2 lg:col-span-1" : ""
                 )}
               >
-                <div className="absolute top-2.5 right-3 flex items-center gap-1 opacity-40">
-                  <Sparkles className="w-3.5 h-3.5 text-[#0D9488]" />
-                  <span className="text-[10px] font-bold text-[#0D9488]">{rec.confidence}%</span>
+                <div className="absolute top-2 right-2.5 flex items-center gap-1 opacity-40">
+                  <span className="text-[9px] font-bold text-[#0D9488]">{rec.confidence}%</span>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className={cn("p-2 rounded-lg", styles.iconBg)}>
-                    <Icon className={cn("w-4 h-4", styles.text)} />
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className={cn("p-1.5 sm:p-2 rounded-lg flex-shrink-0", styles.iconBg)}>
+                    <Icon className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", styles.text)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm text-[#1F2937]">{rec.title}</h4>
-                    <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
+                    <h4 className="font-bold text-xs sm:text-sm text-[#1F2937] truncate">{rec.title}</h4>
+                    <p className="text-[10px] sm:text-xs text-[#6B7280] mt-0.5 leading-tight sm:leading-relaxed line-clamp-2">
                       {rec.text}
                     </p>
                     <Link to={rec.path} className={cn(
-                      "mt-2 text-xs font-semibold flex items-center gap-1 transition-colors w-fit",
+                      "mt-1.5 text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 transition-colors w-fit",
                       styles.text,
                       "hover:underline"
                     )}>
-                      {rec.action} →
+                      {rec.action}
                     </Link>
                   </div>
                 </div>

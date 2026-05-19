@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent className="p-4 sm:p-6 pt-0", CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { AIBadge } from "./AIBadge";
 import { Brain, TrendingUp, Loader2, AlertCircle } from "lucide-react";
@@ -130,14 +130,14 @@ export function AIPredictiveChart() {
 
   return (
     <Card className="border-primary/20 gradient-ai-subtle overflow-hidden">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl gradient-ai shadow-lg shadow-primary/20">
               <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
                 Predictive Spending Analysis
                 <AIBadge variant="inline" />
               </CardTitle>
@@ -156,7 +156,7 @@ export function AIPredictiveChart() {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6 pt-0">
         <div className="h-[300px] mt-6">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 35, right: 15, left: 0, bottom: 0 }}>
@@ -246,7 +246,7 @@ export function AIPredictiveChart() {
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Prediction</span>
           </div>
         </div>
-      </CardContent>
+      </CardContent className="p-4 sm:p-6 pt-0">
     </Card>
   );
 }

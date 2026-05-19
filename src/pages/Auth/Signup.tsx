@@ -66,8 +66,8 @@ export default function SignupPage() {
 
         <div className="relative z-10 max-w-md w-full space-y-8">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-emerald-500 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Wallet className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-primary/10 overflow-hidden border border-slate-100 p-2">
+              <img src="/AuraFinanceLogo.png" alt="Aura Finance" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-3xl font-black tracking-tight text-primary">Aura Finance</h1>
