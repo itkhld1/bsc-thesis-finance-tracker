@@ -63,7 +63,7 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <div>
               <p className="text-xs text-muted-foreground">Total expenses</p>
-              <p className="font-semibold">₺{totalExpenses.toFixed(2)}</p>
+              <p className="font-semibold">₺{(Number(totalExpenses) || 0).toFixed(2)}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Your balance</p>
@@ -76,7 +76,7 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
                   userBalance === 0 && "bg-muted text-muted-foreground"
                 )}
               >
-                {userBalance > 0 ? "+" : ""}{userBalance === 0 ? "Settled" : `₺${userBalance.toFixed(2)}`}
+                {userBalance > 0 ? "+" : ""}{userBalance === 0 ? "Settled" : `₺${(Number(userBalance) || 0).toFixed(2)}`}
               </Badge>
             </div>
           </div>

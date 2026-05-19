@@ -335,7 +335,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Group Spending</p>
-                  <p className="text-2xl font-bold text-foreground">₺{totalExpenses.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-foreground">₺{(Number(totalExpenses) || 0).toFixed(2)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -463,7 +463,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                                 <span className="font-bold text-[13px] text-slate-900 truncate">{toMember?.name}</span>
                               </div>
                               <div className="ml-3 shrink-0">
-                                <span className="text-[14px] font-black text-primary">₺{debt.amount.toFixed(2)}</span>
+                                <span className="text-[14px] font-black text-primary">₺{(Number(debt.amount) || 0).toFixed(2)}</span>
                               </div>
                             </div>
                           );
@@ -507,7 +507,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                             balance === 0 && "bg-slate-50 text-slate-500 border-slate-100"
                           )}
                         >
-                          {balance > 0 ? "+" : ""}{balance === 0 ? "Settled" : `₺${balance.toFixed(2)}`}
+                          {balance > 0 ? "+" : ""}{balance === 0 ? "Settled" : `₺${(Number(balance) || 0).toFixed(2)}`}
                         </Badge>
                       </div>
                     );
@@ -548,7 +548,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                             <div className="flex items-center justify-between mb-1">
                               <p className="font-medium text-sm truncate flex-1">{expense.description}</p>
                               <div className="flex items-center gap-2">
-                                <p className="font-bold text-sm">₺{expense.amount.toFixed(2)}</p>
+                                <p className="font-bold text-sm">₺{(Number(expense.amount) || 0).toFixed(2)}</p>
                                 {user?.id === expense.paidBy && (
                                   <div className="flex items-center gap-1 opacity-0 group-hover/expense:opacity-100 transition-opacity">
                                     <Button 
@@ -850,7 +850,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                           </Avatar>
                           <span className="text-sm font-medium">Pay {toMember?.name}</span>
                         </div>
-                        <span className="font-bold text-primary">₺{debt.amount.toFixed(2)}</span>
+                        <span className="font-bold text-primary">₺{(Number(debt.amount) || 0).toFixed(2)}</span>
                       </Button>
                     );
                   })}
