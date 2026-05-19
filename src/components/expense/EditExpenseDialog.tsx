@@ -13,43 +13,57 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useCategories } from "@/hooks/useCategories";
+import { Calendar } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Expense } from "@/hooks/useExpenses";
+import { useCategories } from "@/hooks/useCategories";
 
 const formSchema = z.object({
-  amount: z.string().min(1, "Amount is required").refine(
-    (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-    "Amount must be a positive number"
-  ),
-  category: z.string().min(1, "Please select a category"),
-  description: z.string().min(1, "Description is required").max(100, "Description too long"),
-  date: z.date({ required_error: "Please select a date" }),
-  notes: z.string().max(500, "Notes too long").optional(),
+  amount: z.string().min(1, "Amount is required"),
+  category: z.string().min(1, "Category is required"),
+  description: z.string().min(1, "Description is required"),
+  date: z.date(),
+  notes: z.string().optional(),
 });
 
 interface EditExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  expense: Expense | null; // Expense data to be edited
+  expense: Expense | null;
 }
 
-export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialogProps) {
+export function EditExpenseDialog({
+  isOpen,
+  onClose,
+  expense,
+}: EditExpenseDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const { data: categories, isLoading: categoriesLoading, isError: categoriesError, error: categoriesFetchError } = useCategories();
   const { token } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: categories } = useCategories();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,7 +76,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
     },
   });
 
-  // Pre-fill form when expense prop changes
+  // Update form when expense changes
   useEffect(() => {
     if (expense) {
       form.reset({
@@ -75,8 +89,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
     }
   }, [expense, form]);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!token || !expense?.id) {
       toast({
         title: "Error",
@@ -119,13 +132,13 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
       console.error("Error updating expense:", error);
       toast({
         title: "Error updating expense",
-        description: error.message || "An unexpected error occurred.",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -133,11 +146,11 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
         <DialogHeader>
           <DialogTitle>Edit Expense</DialogTitle>
           <DialogDescription>
-            Make changes to your expense here. Click save when you're done.
+            Update the details of your expense here.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="amount"
@@ -147,59 +160,80 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₺</span>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="pl-7"
-                      />
+                      <Input type="number" step="0.01" className="pl-7" placeholder="0.00" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={categoriesLoading ? "Loading..." : categoriesError ? "Error loading" : "Select category"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categoriesLoading ? (
-                        <SelectItem value="loading" disabled>
-                          Loading categories...
-                        </SelectItem>
-                      ) : categoriesError ? (
-                        <SelectItem value="error" disabled>
-                          Error: {categoriesFetchError?.message}
-                        </SelectItem>
-                      ) : categories?.length === 0 ? (
-                        <SelectItem value="no-categories" disabled>
-                          No categories found
-                        </SelectItem>
-                      ) : (
-                        categories?.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories?.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="mb-1">Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="description"
@@ -207,62 +241,23 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="What was this expense for?" />
+                    <Input placeholder="What was this for?" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
                     <Textarea
-                      {...field}
-                      placeholder="Add any additional notes..."
+                      placeholder="Add any additional details..."
                       className="resize-none"
-                      rows={3}
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -270,11 +265,14 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
               )}
             />
             <DialogFooter>
-              <Button type="submit" className="w-full gradient-primary hover:opacity-90" disabled={isSubmitting || categoriesLoading || categoriesError || !token}>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving changes...
+                    Saving...
                   </>
                 ) : (
                   "Save changes"
@@ -284,9 +282,6 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
           </form>
         </Form>
       </DialogContent>
-    </Dialog>
-  );
-}ialogContent>
     </Dialog>
   );
 }
