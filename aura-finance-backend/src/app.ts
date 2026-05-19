@@ -272,11 +272,12 @@ app.post('/budget', protect, async (req, res) => {
 
 // --- GROUP ENDPOINTS ---
 // 1. Fetch all groups I belong to (with members)
+// 1. Fetch all groups I belong to (with members and expenses)
 app.get('/groups', protect, async (req, res) => {
   try {
     const userId = req.user?.id;
 
-    // Fetch groups
+    // Fetch groups the user belongs to
     const groupResult = await pool.query(`
       SELECT g.* FROM "Group" g
       JOIN "GroupMember" gm ON g.id = gm."groupId"
@@ -285,41 +286,60 @@ app.get('/groups', protect, async (req, res) => {
     `, [userId]);
 
     const groups = groupResult.rows;
+    if (groups.length === 0) return res.json([]);
 
-    // For each group, fetch members and real expenses
-    for (const group of groups) {
-      const membersResult = await pool.query(`
-        SELECT u.id, u.name, u.email FROM "User" u
-        JOIN "GroupMember" gm ON u.id = gm."userId"
-        WHERE gm."groupId" = $1
-      `, [group.id]);
+    const groupIds = groups.map(g => g.id);
 
-      group.members = membersResult.rows;
+    // Fetch all members for these groups in ONE query
+    const membersResult = await pool.query(`
+      SELECT gm."groupId", u.id, u.name, u.email FROM "User" u
+      JOIN "GroupMember" gm ON u.id = gm."userId"
+      WHERE gm."groupId" = ANY($1)
+    `, [groupIds]);
 
-      const expensesResult = await pool.query(`
-        SELECT * FROM "Expense" WHERE "groupId" = $1 ORDER BY date DESC
-      `, [group.id]);
+    // Fetch all expenses for these groups in ONE query
+    const expensesResult = await pool.query(`
+      SELECT * FROM "Expense" WHERE "groupId" = ANY($1) ORDER BY date DESC
+    `, [groupIds]);
 
-      const expenses = expensesResult.rows;
+    const allExpenses = expensesResult.rows;
+    const expenseIds = allExpenses.map(e => e.id);
 
-      for (const exp of expenses) {
-        const splitsResult = await pool.query(`
-          SELECT "userId", amount, percentage FROM "ExpenseSplit" WHERE "expenseId" = $1
-        `, [exp.id]);
-        
-        exp.paidBy = exp.userId;
-        if (splitsResult.rows.length > 0) {
-          exp.splits = splitsResult.rows;
-          exp.splitBetween = splitsResult.rows.map(s => s.userId);
-        } else {
-          exp.splitBetween = exp.recipientId ? [exp.recipientId] : group.members.map((m: { id: number }) => m.id);
-        }
-      }
-
-      group.expenses = expenses;
+    // Fetch all splits for these expenses in ONE query (if any exist)
+    let allSplits: any[] = [];
+    if (expenseIds.length > 0) {
+      const splitsResult = await pool.query(`
+        SELECT "expenseId", "userId", amount, percentage FROM "ExpenseSplit" 
+        WHERE "expenseId" = ANY($1)
+      `, [expenseIds]);
+      allSplits = splitsResult.rows;
     }
-    res.json(groups);
+
+    // Assemble the data efficiently in memory
+    const finalGroups = groups.map(group => {
+      const groupMembers = membersResult.rows.filter(m => m.groupId === group.id);
+      const groupExpenses = allExpenses.filter(e => e.groupId === group.id).map(exp => {
+        const splits = allSplits.filter(s => s.expenseId === exp.id);
+        return {
+          ...exp,
+          paidBy: exp.userId,
+          splits: splits,
+          splitBetween: splits.length > 0 
+            ? splits.map(s => s.userId) 
+            : (exp.recipientId ? [exp.recipientId] : groupMembers.map(m => m.id))
+        };
+      });
+
+      return {
+        ...group,
+        members: groupMembers,
+        expenses: groupExpenses
+      };
+    });
+
+    res.json(finalGroups);
   } catch (error) {
+    console.error('Error fetching groups:', error);
     res.status(500).json({ message: 'Error fetching groups', details: (error as Error).message });
   }
 });
