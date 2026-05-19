@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Sparkles, ArrowRight, Zap, PiggyBank, TrendingDown, Loader2 } from "lucide-react";
-import { Card, CardContent className="p-4 sm:p-6 pt-0", CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +78,7 @@ export function AIWhatIfSimulator() {
           <Badge variant="outline" className="bg-white border-primary/20 text-primary font-bold">BETA</Badge>
         </div>
       </CardHeader>
-      <CardContent className="p-4 sm:p-6 pt-0" className="pt-6 space-y-8">
+      <CardContent className="pt-6 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Target Category</label>
@@ -177,7 +177,7 @@ export function AIWhatIfSimulator() {
             Apply Optimized Budget
           </Button>
         </div>
-      </CardContent className="p-4 sm:p-6 pt-0">
+      </CardContent>
     </Card>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Card, CardContent className="p-4 sm:p-6 pt-0", CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Expense } from "@/hooks/useExpenses";
@@ -128,7 +128,7 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 sm:p-6 pt-0">
+      <CardContent>
         <div className="h-[200px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (
@@ -197,7 +197,7 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
             )}
           </ResponsiveContainer>
         </div>
-      </CardContent className="p-4 sm:p-6 pt-0">
+      </CardContent>
     </Card>
   );
 }

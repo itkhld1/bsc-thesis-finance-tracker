@@ -6,7 +6,7 @@ import {
   Users,
   PiggyBank,
   Settings,
-  Wallet,
+  
   LogOut,
   User,
   ShieldCheck,

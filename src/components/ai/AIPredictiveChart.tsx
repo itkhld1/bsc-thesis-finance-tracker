@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent className="p-4 sm:p-6 pt-0", CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { AIBadge } from "./AIBadge";
 import { Brain, TrendingUp, Loader2, AlertCircle } from "lucide-react";
@@ -156,7 +156,7 @@ export function AIPredictiveChart() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-4 sm:p-6 pt-0">
+      <CardContent>
         <div className="h-[300px] mt-6">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 35, right: 15, left: 0, bottom: 0 }}>
@@ -246,7 +246,7 @@ export function AIPredictiveChart() {
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Prediction</span>
           </div>
         </div>
-      </CardContent className="p-4 sm:p-6 pt-0">
+      </CardContent>
     </Card>
   );
 }
