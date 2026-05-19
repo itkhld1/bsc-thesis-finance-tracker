@@ -150,7 +150,7 @@ export function getMemberById(members: (GroupMember | any)[], id: string | numbe
 }
 
 export function getTotalGroupExpenses(group: Group): number {
-  return group.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  return group.expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 }
 
 export function getUserBalance(group: Group, userId: string | number): number {

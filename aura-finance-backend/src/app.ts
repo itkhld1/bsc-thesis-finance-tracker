@@ -212,7 +212,16 @@ pool.connect()
        `);
 
        // Ensure Settlement category exists
-       await client.query("INSERT INTO \"Category\" (id, name, icon, color) VALUES ('settlement', 'Settlement', 'Handshake', '#10b981') ON CONFLICT (name) DO NOTHING");
+       await client.query("INSERT INTO \"Category\" (id, name, icon, color) VALUES ('settlement', 'Settlement', 'Handshake', '#10b981') ON CONFLICT (id) DO NOTHING");
+
+       // 8. Create Indexes for performance
+       await client.query('CREATE INDEX IF NOT EXISTS "idx_expense_userid" ON "Expense"("userId")');
+       await client.query('CREATE INDEX IF NOT EXISTS "idx_expense_groupid" ON "Expense"("groupId")');
+       await client.query('CREATE INDEX IF NOT EXISTS "idx_groupmember_userid" ON "GroupMember"("userId")');
+       await client.query('CREATE INDEX IF NOT EXISTS "idx_groupmember_groupid" ON "GroupMember"("groupId")');
+       await client.query('CREATE INDEX IF NOT EXISTS "idx_budget_userid" ON "Budget"("userId")');
+       await client.query('CREATE INDEX IF NOT EXISTS "idx_expensesplit_expenseid" ON "ExpenseSplit"("expenseId")');
+       await client.query('CREATE INDEX IF NOT EXISTS "idx_activity_groupid" ON "Activity"("groupId")');
     } catch (e) {
       console.log('Database migration log:', (e as Error).message);
     }
