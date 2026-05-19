@@ -260,28 +260,30 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Compact Data Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        <div className="space-y-4">
-          <AIFeatureHighlight expenses={expenses || []} />
-          <CategoryChart data={categoryData} />
-          <SpendingTrends expenses={expenses || []} />
-          <AIPredictiveChart />
-        </div>
+      {/* Full Width Cohesive List */}
+      <div className="space-y-6 sm:space-y-12">
+        <AIFeatureHighlight expenses={expenses || []} />
         
-        <div className="space-y-4">
-          <GoalsTracker />
-          <div id="budget-status">
-            <BudgetStatus categories={budgetStatusData} />
-          </div>
-          <AIWhatIfSimulator />
-          <div id="ai-recommendations">
-             <AIRecommendations expenses={expenses || []} />
-          </div>
-        </div>
-      </div>
+        <GoalsTracker />
 
-      <div className="mt-4">
+        <CategoryChart data={categoryData} />
+        
+        <div id="budget-status">
+          <BudgetStatus categories={budgetStatusData} />
+        </div>
+
+        <div id="spending-trends">
+          <SpendingTrends expenses={expenses || []} />
+        </div>
+
+        <AIPredictiveChart />
+
+        <AIWhatIfSimulator />
+
+        <div id="ai-recommendations">
+           <AIRecommendations expenses={expenses || []} />
+        </div>
+
         <RecentTransactions expenses={expenses || []} />
       </div>
     </div>

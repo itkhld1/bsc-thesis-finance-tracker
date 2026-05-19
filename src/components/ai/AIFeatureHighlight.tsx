@@ -103,14 +103,14 @@ export function AIFeatureHighlight({ expenses }: AIFeatureHighlightProps) {
     <Card className="border-primary/30 overflow-hidden relative group/main">
       <div className="absolute inset-0 gradient-ai opacity-5 group-hover/main:opacity-10 transition-opacity" />
       
-      <CardContent className="p-6 relative p-3 sm:p-6">
+      <CardContent className="p-6 relative">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl gradient-ai ai-glow shadow-lg shadow-primary/20">
               <Sparkles className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="text-sm sm:text-lg font-bold text-foreground flex items-center gap-2">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                 Powered by AI
                 <span className="px-2 py-0.5 text-[10px] font-medium rounded-full gradient-ai text-primary-foreground uppercase tracking-wider">
                   Smart
@@ -154,15 +154,15 @@ export function AIFeatureHighlight({ expenses }: AIFeatureHighlightProps) {
         <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-8">
             <div className="text-left">
-              <p className="text-lg sm:text-2xl text-foreground tracking-tighter">98%</p>
+              <p className="text-2xl text-foreground tracking-tighter">98%</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Accuracy</p>
             </div>
             <div className="text-left border-l border-border/50 pl-8">
-              <p className="text-lg sm:text-2xl text-foreground tracking-tighter">0.8s</p>
+              <p className="text-2xl text-foreground tracking-tighter">0.8s</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Latency</p>
             </div>
             <div className="text-left border-l border-border/50 pl-8">
-              <p className="text-lg sm:text-2xl text-foreground tracking-tighter">24/7</p>
+              <p className="text-2xl text-foreground tracking-tighter">24/7</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Real-time</p>
             </div>
           </div>

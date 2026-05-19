@@ -60,10 +60,10 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
 
   return (
     <Card className="overflow-hidden border-slate-100 shadow-sm">
-      <CardHeader className="pb-3 border-b border-slate-50 p-3 sm:p-6 pb-2">
+      <CardHeader className="pb-3 border-b border-slate-50">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-sm sm:text-lg font-black tracking-tight">Recent Transactions</CardTitle>
+            <CardTitle className="text-lg font-black tracking-tight">Recent Transactions</CardTitle>
             <CardDescription className="text-xs">Your latest spending activity</CardDescription>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -87,8 +87,8 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0 p-3 sm:p-6">
-        <div className="divide-y divide-border max-h-[180px] sm:h-[300px] overflow-y-auto scrollbar-none">
+      <CardContent className="p-0">
+        <div className="divide-y divide-border max-h-[300px] overflow-y-auto scrollbar-none">
           {recentExpenses.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               No recent transactions found.

@@ -66,10 +66,10 @@ export function AIWhatIfSimulator() {
 
   return (
     <Card className="border-primary/20 shadow-lg shadow-primary/5 overflow-hidden">
-      <CardHeader className="pb-4 bg-primary/5 p-3 sm:p-6 pb-2">
+      <CardHeader className="pb-4 bg-primary/5">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-sm sm:text-lg sm:text-xl font-black flex items-center gap-2">
+            <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
               AI "What-If" Simulator
             </CardTitle>
@@ -78,7 +78,7 @@ export function AIWhatIfSimulator() {
           <Badge variant="outline" className="bg-white border-primary/20 text-primary font-bold">BETA</Badge>
         </div>
       </CardHeader>
-      <CardContent className="pt-6 space-y-8 p-3 sm:p-6">
+      <CardContent className="pt-6 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Target Category</label>
@@ -124,7 +124,7 @@ export function AIWhatIfSimulator() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase">Monthly Savings Potential</p>
-                  <p className="text-lg sm:text-2xl font-black text-slate-900">₺{result.potentialMonthlySavings.toFixed(0)}</p>
+                  <p className="text-2xl font-black text-slate-900">₺{result.potentialMonthlySavings.toFixed(0)}</p>
                 </div>
               </div>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">

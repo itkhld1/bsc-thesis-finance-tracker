@@ -73,9 +73,9 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
 
   return (
     <Card className="overflow-hidden h-full">
-      <CardHeader className="pb-2 p-4 sm:p-6 p-3 sm:p-6 pb-2">
+      <CardHeader className="pb-2 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <CardTitle className="text-xs sm:text-base sm:text-sm sm:text-lg font-semibold">Spending Trends</CardTitle>
+          <CardTitle className="text-base sm:text-lg font-semibold">Spending Trends</CardTitle>
           <div className="flex gap-2">
             <div className="flex bg-muted rounded-lg p-1">
               <Button
@@ -129,7 +129,7 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[150px] sm:h-[200px] sm:h-[180px] sm:h-[280px]">
+        <div className="h-[200px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (
               <BarChart data={chartData}>

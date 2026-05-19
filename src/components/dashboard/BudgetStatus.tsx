@@ -31,11 +31,11 @@ export function BudgetStatus({ categories }: BudgetStatusProps) {
 
   return (
     <Card className="h-full border-slate-100 shadow-sm overflow-hidden">
-      <CardHeader className="pb-2 p-4 sm:p-6 p-3 sm:p-6 pb-2">
-        <CardTitle className="text-xs sm:text-base sm:text-sm sm:text-lg font-bold tracking-tight">Budget Tracking</CardTitle>
+      <CardHeader className="pb-2 p-4 sm:p-6">
+        <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Budget Tracking</CardTitle>
         <CardDescription className="text-[10px] sm:text-xs">Current month usage by category</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 sm:space-y-6 pt-2 p-4 sm:p-6 max-h-[200px] sm:max-h-[350px] overflow-y-auto scrollbar-none p-3 sm:p-6">
+      <CardContent className="space-y-4 sm:space-y-6 pt-2 p-4 sm:p-6 max-h-[350px] overflow-y-auto scrollbar-none">
         {categories.map((cat) => {
           const percentage = getSpentPercentage(cat.spent, cat.allocated);
           const statusColor = getStatusColor(percentage);
