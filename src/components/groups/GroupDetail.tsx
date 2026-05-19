@@ -208,7 +208,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     if (!memberEmail.trim()) return;
     setIsAddingMember(true);
     try {
-      const res = await fetch(`/groups/${group.id}/members`, {
+      const res = await fetch(`${API_BASE_URL}/groups/${group.id}/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
