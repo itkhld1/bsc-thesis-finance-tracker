@@ -59,15 +59,15 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
   }
 
   return (
-    <Card className="overflow-hidden border-slate-100 shadow-sm">
-      <CardHeader className="pb-3 border-b border-slate-50">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <Card className="overflow-hidden border-slate-100 shadow-sm text-slate-900">
+      <CardHeader className="pb-2 p-3 sm:p-6 border-b border-slate-50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <CardTitle className="text-lg font-black tracking-tight">Recent Transactions</CardTitle>
-            <CardDescription className="text-xs">Your latest spending activity</CardDescription>
+            <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Recent Transactions</CardTitle>
+            <CardDescription className="text-[10px] sm:text-xs">Your latest spending activity</CardDescription>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-widest gap-2 flex-1 sm:flex-none" onClick={() => {
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black uppercase tracking-tighter gap-1.5 flex-1 sm:flex-none" onClick={() => {
               const data = expenses.map(e => ({
                 Date: new Date(e.date).toLocaleDateString(),
                 Description: e.description,
@@ -76,10 +76,10 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
               }));
               exportToCSV(data, "aura-recent-transactions");
             }}>
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3 h-3" />
               Export
             </Button>
-            <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-bold uppercase tracking-widest flex-1 sm:flex-none">
+            <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-[9px] font-black uppercase tracking-tighter flex-1 sm:flex-none">
               <Link to="/expenses" className="text-primary hover:text-primary/80">
                 View all
               </Link>
@@ -88,10 +88,10 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="divide-y divide-border max-h-[300px] overflow-y-auto scrollbar-none">
+        <div className="divide-y divide-border max-h-[220px] sm:max-h-[300px] overflow-y-auto scrollbar-none">
           {recentExpenses.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              No recent transactions found.
+            <div className="p-6 text-center text-slate-400">
+              No transactions found.
             </div>
           ) : (
             recentExpenses.map((expense, index) => {
@@ -102,24 +102,24 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
                 <div
                   key={expense.id}
                   className={cn(
-                    "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors",
+                    "flex items-center gap-3 p-2.5 sm:p-4 hover:bg-slate-50 transition-colors",
                     "animate-fade-in"
                   )}
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${category.color}20` }}
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${category.color}15` }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: category.color }} />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: category.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{expense.description || "No description"}</p>
-                    <p className="text-sm text-muted-foreground">{category.name}</p>
+                    <p className="font-bold text-xs sm:text-sm truncate leading-tight">{expense.description || "No description"}</p>
+                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter mt-0.5">{category.name}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-foreground">-₺{expense.amount.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">{formatDate(expense.date)}</p>
+                    <p className="font-black text-xs sm:text-sm text-slate-900">-₺{(Number(expense.amount) || 0).toFixed(2)}</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{formatDate(expense.date)}</p>
                   </div>
                 </div>
               );

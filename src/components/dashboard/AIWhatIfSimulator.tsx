@@ -65,26 +65,26 @@ export function AIWhatIfSimulator() {
   }, [selectedCategory, reduction]);
 
   return (
-    <Card className="border-primary/20 shadow-lg shadow-primary/5 overflow-hidden">
-      <CardHeader className="pb-4 bg-primary/5">
+    <Card className="border-primary/20 shadow-lg shadow-primary/5 overflow-hidden text-slate-900">
+      <CardHeader className="pb-3 p-4 sm:p-6 bg-primary/5">
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
+          <div className="space-y-0.5">
+            <CardTitle className="text-base sm:text-xl font-black flex items-center gap-2 tracking-tight">
+              <Sparkles className="w-4 h-4 text-primary" />
               AI "What-If" Simulator
             </CardTitle>
-            <CardDescription className="text-xs font-medium">Simulate spending changes to see goal impacts</CardDescription>
+            <CardDescription className="text-[10px] sm:text-xs">Simulate spending changes</CardDescription>
           </div>
-          <Badge variant="outline" className="bg-white border-primary/20 text-primary font-bold">BETA</Badge>
+          <Badge variant="outline" className="bg-white border-primary/20 text-primary font-black text-[9px] h-5">BETA</Badge>
         </div>
       </CardHeader>
-      <CardContent className="pt-6 space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Target Category</label>
+      <CardContent className="p-4 sm:p-6 pt-4 space-y-4 sm:space-y-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target Category</label>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="h-11 font-bold">
-                <SelectValue placeholder="Select category" />
+              <SelectTrigger className="h-9 font-bold text-xs">
+                <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 {categories?.map(cat => (
@@ -93,12 +93,12 @@ export function AIWhatIfSimulator() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Spending Reduction</label>
-              <span className="text-sm font-black text-primary">{reduction[0]}%</span>
+              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Reduction</label>
+              <span className="text-xs font-black text-primary">{reduction[0]}%</span>
             </div>
-            <div className="h-11 flex items-center">
+            <div className="h-9 flex items-center">
               <Slider 
                 value={reduction} 
                 onValueChange={setReduction} 
@@ -111,59 +111,52 @@ export function AIWhatIfSimulator() {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Loader2 className="w-8 h-8 animate-spin text-primary/50" />
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recalculating Projections...</p>
+          <div className="flex flex-col items-center justify-center py-6 space-y-3">
+            <Loader2 className="w-6 h-6 animate-spin text-primary/50" />
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Recalculating...</p>
           </div>
         ) : result && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                  <Zap className="w-5 h-5 text-white" />
+          <div className="space-y-4 animate-fade-in">
+            <div className="bg-slate-50 rounded-xl p-3 sm:p-5 border border-slate-100">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                  <Zap className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase">Monthly Savings Potential</p>
-                  <p className="text-2xl font-black text-slate-900">₺{result.potentialMonthlySavings.toFixed(0)}</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase">Savings Potential</p>
+                  <p className="text-xl font-black text-slate-900 leading-none">₺{result.potentialMonthlySavings.toFixed(0)}</p>
                 </div>
               </div>
-              <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                By reducing your <span className="font-bold text-primary">{selectedCategory}</span> spending by <span className="font-bold text-primary">{reduction}%</span>, you could save an extra <span className="font-bold text-primary">₺{result.potentialMonthlySavings.toFixed(0)}</span> every month.
+              <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                Save an extra <span className="font-bold text-primary">₺{result.potentialMonthlySavings.toFixed(0)}/mo</span> by reducing <span className="font-bold">{selectedCategory}</span> by <span className="font-bold">{reduction}%</span>.
               </p>
             </div>
 
-            <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <ArrowRight className="w-3 h-3" /> Impact on Savings Goals
+            <div className="space-y-2.5">
+              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                <ArrowRight className="w-2.5 h-2.5" /> Savings Goals Impact
               </label>
               
               {result.projections.length === 0 ? (
-                <div className="text-center py-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No goals to analyze</p>
+                <div className="text-center py-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">No goals to analyze</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {result.projections.map((p, i) => (
-                    <div key={i} className="p-4 rounded-xl border border-slate-100 bg-white hover:border-primary/20 transition-all group">
-                      <h5 className="text-sm font-bold text-slate-900 mb-2 truncate">{p.goalName}</h5>
+                    <div key={i} className="p-3 rounded-lg border border-slate-100 bg-white hover:border-primary/20 transition-all group">
+                      <h5 className="text-xs font-bold text-slate-900 mb-1.5 truncate">{p.goalName}</h5>
                       <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Now</p>
-                          <p className="text-sm font-black text-slate-600">{p.currentMonthsToGoal ?? '?'} mo</p>
+                        <div className="space-y-0">
+                          <p className="text-[8px] font-bold text-slate-300 uppercase">Now</p>
+                          <p className="text-xs font-black text-slate-400">{p.currentMonthsToGoal ?? '?'} mo</p>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-primary transition-colors" />
-                        <div className="space-y-0.5 text-right">
-                          <p className="text-[10px] font-bold text-primary uppercase">Optimized</p>
-                          <p className="text-sm font-black text-primary">{p.newMonthsToGoal ?? '?'} mo</p>
+                        <ArrowRight className="w-3 h-3 text-slate-200 group-hover:text-primary transition-colors" />
+                        <div className="space-y-0 text-right">
+                          <p className="text-[8px] font-bold text-primary uppercase">Optimized</p>
+                          <p className="text-xs font-black text-primary">{p.newMonthsToGoal ?? '?'} mo</p>
                         </div>
                       </div>
-                      {p.monthsSaved !== null && p.monthsSaved > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-50 flex items-center gap-2">
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none font-black text-[9px] uppercase px-1.5 h-5">
-                            Reach {p.monthsSaved} mo sooner!
-                          </Badge>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -172,9 +165,9 @@ export function AIWhatIfSimulator() {
           </div>
         )}
 
-        <div className="pt-2">
-          <Button className="w-full h-11 gradient-primary font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20">
-            Apply Optimized Budget
+        <div className="pt-0">
+          <Button className="w-full h-10 gradient-primary font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20">
+            Apply Optimization
           </Button>
         </div>
       </CardContent>

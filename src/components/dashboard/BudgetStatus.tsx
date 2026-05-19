@@ -30,52 +30,46 @@ export function BudgetStatus({ categories }: BudgetStatusProps) {
   }
 
   return (
-    <Card className="h-full border-slate-100 shadow-sm overflow-hidden">
-      <CardHeader className="pb-2 p-4 sm:p-6">
+    <Card className="h-full border-slate-100 shadow-sm overflow-hidden text-slate-900">
+      <CardHeader className="pb-1 p-4 sm:p-6">
         <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Budget Tracking</CardTitle>
-        <CardDescription className="text-[10px] sm:text-xs">Current month usage by category</CardDescription>
+        <CardDescription className="text-[10px] sm:text-xs">Current month usage</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 sm:space-y-6 pt-2 p-4 sm:p-6 max-h-[350px] overflow-y-auto scrollbar-none">
+      <CardContent className="space-y-4 pt-2 p-4 sm:p-6 max-h-[200px] sm:max-h-none overflow-y-auto scrollbar-none">
         {categories.map((cat) => {
           const percentage = getSpentPercentage(cat.spent, cat.allocated);
           const statusColor = getStatusColor(percentage);
-          const isOver = percentage >= 100;
           
           return (
-            <div key={cat.id} className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
+            <div key={cat.id} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <div 
-                    className="w-2.5 h-2.5 rounded-full" 
+                    className="w-2 h-2 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: cat.color }}
                   />
-                  <span className="font-medium text-foreground">{cat.name}</span>
+                  <span className="font-bold truncate">{cat.name}</span>
                 </div>
-                <div className="text-right">
-                  <span className="font-semibold text-foreground">₺{cat.spent.toLocaleString()}</span>
-                  <span className="text-muted-foreground mx-1">/</span>
-                  <span className="text-muted-foreground text-xs font-bold">₺{cat.allocated.toLocaleString()}</span>
+                <div className="text-right flex-shrink-0">
+                  <span className="font-bold">₺{cat.spent.toLocaleString()}</span>
+                  <span className="text-slate-400 text-[10px] ml-1">/ ₺{cat.allocated.toLocaleString()}</span>
                 </div>
               </div>
-              <div className="relative pt-1">
-                <Progress 
-                  value={Math.min(percentage, 100)} 
-                  className="h-2 bg-slate-100"
-                />
+              <div className="relative h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="absolute top-0 h-2 rounded-full opacity-20 transition-all duration-500"
+                  className="h-full rounded-full transition-all duration-500"
                   style={{ 
                     width: `${Math.min(percentage, 100)}%`, 
                     backgroundColor: statusColor 
                   }}
                 />
               </div>
-              <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-bold">
+              <div className="flex justify-between items-center text-[9px] uppercase tracking-tighter font-black">
                 <span style={{ color: statusColor }}>
-                  {percentage >= 100 ? "Limit Reached" : `${percentage}% Used`}
+                  {percentage >= 100 ? "Limit reached" : `${percentage}% used`}
                 </span>
-                <span className="text-muted-foreground">
-                  ₺{(cat.allocated - cat.spent).toLocaleString()} {cat.allocated - cat.spent < 0 ? 'Over' : 'Left'}
+                <span className="text-slate-400">
+                  ₺{Math.abs(cat.allocated - cat.spent).toLocaleString()} {cat.allocated - cat.spent < 0 ? 'over' : 'left'}
                 </span>
               </div>
             </div>

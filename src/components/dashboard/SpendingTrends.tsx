@@ -73,42 +73,42 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
 
   return (
     <Card className="overflow-hidden h-full">
-      <CardHeader className="pb-2 p-4 sm:p-6">
+      <CardHeader className="pb-2 p-4 sm:p-6 text-slate-900">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <CardTitle className="text-base sm:text-lg font-semibold">Spending Trends</CardTitle>
-          <div className="flex gap-2">
-            <div className="flex bg-muted rounded-lg p-1">
+          <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Spending Trends</CardTitle>
+          <div className="flex gap-1.5">
+            <div className="flex bg-slate-100 rounded-lg p-0.5 sm:p-1">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setView("weekly")}
                 className={cn(
-                  "h-7 px-3 text-xs",
-                  view === "weekly" && "bg-background shadow-sm"
+                  "h-6 sm:h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase",
+                  view === "weekly" && "bg-white shadow-sm"
                 )}
               >
-                Weekly
+                Week
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setView("monthly")}
                 className={cn(
-                  "h-7 px-3 text-xs",
-                  view === "monthly" && "bg-background shadow-sm"
+                  "h-6 sm:h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase",
+                  view === "monthly" && "bg-white shadow-sm"
                 )}
               >
-                Monthly
+                Month
               </Button>
             </div>
-            <div className="flex bg-muted rounded-lg p-1">
+            <div className="flex bg-slate-100 rounded-lg p-0.5 sm:p-1">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setChartType("bar")}
                 className={cn(
-                  "h-7 px-3 text-xs",
-                  chartType === "bar" && "bg-background shadow-sm"
+                  "h-6 sm:h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase",
+                  chartType === "bar" && "bg-white shadow-sm"
                 )}
               >
                 Bar
@@ -118,8 +118,8 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
                 variant="ghost"
                 onClick={() => setChartType("line")}
                 className={cn(
-                  "h-7 px-3 text-xs",
-                  chartType === "line" && "bg-background shadow-sm"
+                  "h-6 sm:h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase",
+                  chartType === "line" && "bg-white shadow-sm"
                 )}
               >
                 Line
@@ -128,8 +128,8 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[200px] sm:h-[280px]">
+      <CardContent className="p-2 sm:p-6 pt-0">
+        <div className="h-[180px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (
               <BarChart data={chartData}>
@@ -137,12 +137,12 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
                   dataKey="label"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                   tickFormatter={(value) => `₺${value}`}
                 />
                 <Tooltip
@@ -167,12 +167,12 @@ export function SpendingTrends({ expenses }: SpendingTrendsProps) {
                   dataKey="label"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                   tickFormatter={(value) => `₺${value}`}
                 />
                 <Tooltip

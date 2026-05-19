@@ -103,21 +103,21 @@ export function AIFeatureHighlight({ expenses }: AIFeatureHighlightProps) {
     <Card className="border-primary/30 overflow-hidden relative group/main">
       <div className="absolute inset-0 gradient-ai opacity-5 group-hover/main:opacity-10 transition-opacity" />
       
-      <CardContent className="p-6 relative">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl gradient-ai ai-glow shadow-lg shadow-primary/20">
-              <Sparkles className="w-6 h-6 text-primary-foreground" />
+      <CardContent className="p-4 sm:p-6 relative">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-3 rounded-xl gradient-ai ai-glow shadow-lg shadow-primary/20 flex-shrink-0">
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                Powered by AI
-                <span className="px-2 py-0.5 text-[10px] font-medium rounded-full gradient-ai text-primary-foreground uppercase tracking-wider">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-lg font-bold text-foreground flex items-center gap-1.5 sm:gap-2">
+                <span className="truncate">Powered by AI</span>
+                <span className="px-1.5 py-0.5 text-[8px] sm:text-[10px] font-medium rounded-full gradient-ai text-primary-foreground uppercase tracking-wider">
                   Smart
                 </span>
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Advanced machine learning for your finances
+              <p className="text-[10px] sm:text-sm text-muted-foreground truncate">
+                Advanced machine learning analytics
               </p>
             </div>
           </div>
@@ -128,42 +128,42 @@ export function AIFeatureHighlight({ expenses }: AIFeatureHighlightProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
               <div
                 key={feature.title}
                 onClick={feature.onClick}
-                className="group p-4 rounded-xl bg-background/60 border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 animate-fade-in cursor-pointer"
+                className="group p-3 sm:p-4 rounded-xl bg-background/60 border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 animate-fade-in cursor-pointer"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className={cn("p-2 rounded-lg w-fit mb-3 transition-transform group-hover:scale-110", feature.bgColor)}>
-                  <Icon className={cn("w-5 h-5", feature.color)} />
+                <div className={cn("p-1.5 sm:p-2 rounded-lg w-fit mb-2 sm:mb-3 transition-transform group-hover:scale-110", feature.bgColor)}>
+                  <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5", feature.color)} />
                 </div>
-                <h4 className="font-bold text-sm text-foreground mb-0.5">{feature.title}</h4>
-                <p className={cn("text-[11px] font-bold mb-1 uppercase tracking-tighter", feature.color)}>
+                <h4 className="font-bold text-xs sm:text-sm text-foreground mb-0.5 truncate">{feature.title}</h4>
+                <p className={cn("text-[9px] sm:text-[11px] font-bold mb-0.5 sm:mb-1 uppercase tracking-tighter truncate", feature.color)}>
                   {feature.status}
                 </p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight line-clamp-1 sm:line-clamp-2">{feature.description}</p>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-8">
+        <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-border/50 flex items-center justify-between">
+          <div className="flex items-center justify-between w-full sm:justify-start sm:gap-8">
             <div className="text-left">
-              <p className="text-2xl text-foreground tracking-tighter">98%</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Accuracy</p>
+              <p className="text-lg sm:text-2xl text-foreground tracking-tighter font-bold">98%</p>
+              <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-widest">Accuracy</p>
             </div>
-            <div className="text-left border-l border-border/50 pl-8">
-              <p className="text-2xl text-foreground tracking-tighter">0.8s</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Latency</p>
+            <div className="text-left border-l border-border/50 pl-4 sm:pl-8">
+              <p className="text-lg sm:text-2xl text-foreground tracking-tighter font-bold">0.8s</p>
+              <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-widest">Speed</p>
             </div>
-            <div className="text-left border-l border-border/50 pl-8">
-              <p className="text-2xl text-foreground tracking-tighter">24/7</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Real-time</p>
+            <div className="text-left border-l border-border/50 pl-4 sm:pl-8">
+              <p className="text-lg sm:text-2xl text-foreground tracking-tighter font-bold">Real</p>
+              <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-widest">Time</p>
             </div>
           </div>
         </div>

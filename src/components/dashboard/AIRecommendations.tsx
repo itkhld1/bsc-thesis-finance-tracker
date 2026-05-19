@@ -119,12 +119,12 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
   const recommendations = generateRecommendations();
 
   return (
-    <Card className="border-[#E5E7EB] bg-white overflow-hidden relative h-full">
-      <CardHeader className="pb-2 p-4 sm:p-6 relative">
+    <Card className="border-[#E5E7EB] bg-white overflow-hidden relative h-full text-slate-900">
+      <CardHeader className="pb-1 p-3 sm:p-6 relative">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
-            <div className="p-2 rounded-xl bg-[#0D9488]/10 flex-shrink-0">
-              <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-[#0D9488]" />
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-sm sm:text-lg font-bold tracking-tight">
+            <div className="p-1.5 rounded-lg bg-[#0D9488]/10 flex-shrink-0">
+              <Brain className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-[#0D9488]" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
@@ -133,14 +133,14 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
               </div>
             </div>
           </CardTitle>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#F9FAFB] border border-[#F3F4F6] flex-shrink-0 scale-90 sm:scale-100 origin-right">
-            <Zap className="w-3.5 h-3.5 text-[#0D9488]" />
-            <span className="text-[10px] font-bold text-muted-foreground uppercase">{recommendations.length}</span>
+          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-slate-50 border border-slate-100 flex-shrink-0 scale-90 sm:scale-100 origin-right">
+            <Zap className="w-3 h-3 text-[#0D9488]" />
+            <span className="text-[9px] font-black text-slate-400 uppercase">{recommendations.length}</span>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="relative p-4 sm:p-6 pt-2">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
+      <CardContent className="relative p-3 sm:p-6 pt-1">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-2">
           {recommendations.map((rec, index) => {
             const styles = typeStyles[rec.type as keyof typeof typeStyles] || typeStyles.success;
             const Icon = rec.icon;
@@ -149,27 +149,27 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
               <div
                 key={rec.id}
                 className={cn(
-                  "group relative p-3 sm:p-4 rounded-xl border transition-all duration-300 hover:shadow-md",
+                  "group relative p-2.5 sm:p-4 rounded-xl border transition-all duration-300 hover:shadow-md",
                   styles.bg,
                   styles.border,
                   index === 2 ? "sm:col-span-2 lg:col-span-1" : ""
                 )}
               >
-                <div className="absolute top-2 right-2.5 flex items-center gap-1 opacity-40">
-                  <span className="text-[9px] font-bold text-[#0D9488]">{rec.confidence}%</span>
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-30">
+                  <span className="text-[8px] font-black text-[#0D9488]">{rec.confidence}%</span>
                 </div>
 
-                <div className="flex items-start gap-2.5 sm:gap-3">
-                  <div className={cn("p-1.5 sm:p-2 rounded-lg flex-shrink-0", styles.iconBg)}>
-                    <Icon className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", styles.text)} />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className={cn("p-1.5 rounded-lg flex-shrink-0", styles.iconBg)}>
+                    <Icon className={cn("w-3 h-3 sm:w-4 sm:h-4", styles.text)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-xs sm:text-sm text-[#1F2937] truncate">{rec.title}</h4>
-                    <p className="text-[10px] sm:text-xs text-[#6B7280] mt-0.5 leading-tight sm:leading-relaxed line-clamp-2">
+                    <h4 className="font-bold text-[11px] sm:text-sm text-slate-800 truncate">{rec.title}</h4>
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 leading-tight line-clamp-1 sm:line-clamp-2">
                       {rec.text}
                     </p>
                     <Link to={rec.path} className={cn(
-                      "mt-1.5 text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 transition-colors w-fit",
+                      "mt-1.5 text-[9px] font-black uppercase tracking-tighter flex items-center gap-1 transition-colors w-fit",
                       styles.text,
                       "hover:underline"
                     )}>

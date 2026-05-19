@@ -29,11 +29,11 @@ export function CategoryChart({ data }: CategoryChartProps) {
 
   return (
     <Card className="overflow-hidden border-slate-100 shadow-sm h-full">
-      <CardHeader className="pb-2 p-4 sm:p-6">
-        <CardTitle className="text-base sm:text-lg font-bold">Spending by Category</CardTitle>
-        <CardDescription className="text-xs">Distribution across all categories</CardDescription>
+      <CardHeader className="pb-1 p-4 sm:p-6">
+        <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Spending Breakdown</CardTitle>
+        <CardDescription className="text-[10px] sm:text-xs">Distribution by category</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 sm:p-6">
         <div className="h-[200px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -41,8 +41,8 @@ export function CategoryChart({ data }: CategoryChartProps) {
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={90}
+                innerRadius={45}
+                outerRadius={70}
                 paddingAngle={4}
                 dataKey="value"
                 animationDuration={800}
@@ -63,9 +63,10 @@ export function CategoryChart({ data }: CategoryChartProps) {
               />
               <Legend
                 verticalAlign="bottom"
-                height={36}
+                height={30}
+                iconSize={8}
                 formatter={(value) => (
-                  <span className="text-sm text-foreground font-medium">{value}</span>
+                  <span className="text-[10px] sm:text-sm text-foreground font-medium">{value}</span>
                 )}
               />
             </PieChart>

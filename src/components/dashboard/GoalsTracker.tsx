@@ -69,73 +69,69 @@ export function GoalsTracker() {
   }
 
   return (
-    <Card className="border-slate-100 shadow-sm flex flex-col h-fit">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+    <Card className="border-slate-100 shadow-sm flex flex-col h-fit text-slate-900">
+      <CardHeader className="flex flex-row items-center justify-between pb-1 p-4 sm:p-6">
         <div>
-          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-            <Target className="w-5 h-5 text-primary" />
+          <CardTitle className="text-base sm:text-lg font-bold flex items-center gap-2 tracking-tight">
+            <Target className="w-4 h-4 text-primary" />
             Savings Goals
           </CardTitle>
-          <CardDescription>Track your long-term targets</CardDescription>
+          <CardDescription className="text-[10px] sm:text-xs">Track your long-term targets</CardDescription>
         </div>
-        <AddGoalDialog />
+        <div className="scale-90 sm:scale-100 origin-right">
+          <AddGoalDialog />
+        </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
+      <CardContent className="flex-1 overflow-hidden p-4 sm:p-6 pt-2">
         {goals.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
-              <TrendingUp className="w-8 h-8 text-slate-200" />
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-3">
+              <TrendingUp className="w-6 h-6 text-slate-200" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900 mb-1">No goals set yet</h4>
-            <p className="text-xs text-slate-500 max-w-[180px] mx-auto">Set a savings goal to start tracking your progress.</p>
+            <h4 className="text-xs font-bold mb-0.5">No goals set yet</h4>
+            <p className="text-[10px] text-slate-400 max-w-[150px] mx-auto">Set a savings goal to start.</p>
           </div>
         ) : (
-          <div className="space-y-5 mt-2 max-h-[320px] overflow-y-auto pr-2 scrollbar-thin">
+          <div className="space-y-4 mt-1 max-h-[180px] sm:max-h-none overflow-y-auto pr-1 scrollbar-none">
             {goals.map((goal) => {
               const progress = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
               const isCompleted = progress >= 100;
 
               return (
                 <div key={goal.id} className="group/goal relative">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className={cn("text-sm font-bold", isCompleted ? "text-green-600" : "text-slate-900")}>
+                  <div className="flex items-start justify-between mb-1.5">
+                    <div className="min-w-0">
+                      <h4 className={cn("text-xs font-bold truncate", isCompleted ? "text-green-600" : "text-slate-900")}>
                         {goal.name}
                         {isCompleted && " 🎉"}
                       </h4>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter truncate">
                           ₺{Number(goal.currentAmount).toLocaleString()} of ₺{Number(goal.targetAmount).toLocaleString()}
                         </span>
-                        {goal.deadline && (
-                          <Badge variant="outline" className="text-[9px] px-1 h-4 leading-none border-slate-200 text-slate-500">
-                            By {format(new Date(goal.deadline), "MMM yyyy")}
-                          </Badge>
-                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary hover:bg-primary/5"
+                        className="h-6 px-1.5 text-[9px] font-black uppercase tracking-tighter text-primary hover:bg-primary/5"
                         onClick={() => {
                           setSelectedGoal(goal);
                           setContributionOpen(true);
                         }}
                       >
-                        <Plus className="w-3 h-3 mr-1" />
                         Add
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400">
-                            <MoreVertical className="w-3.5 h-3.5" />
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400">
+                            <MoreVertical className="w-3 h-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="text-rose-600" onClick={() => handleDelete(goal.id)}>
-                            <Trash2 className="w-4 h-4 mr-2" />
+                          <DropdownMenuItem className="text-rose-600 text-xs font-bold" onClick={() => handleDelete(goal.id)}>
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
                             Delete Goal
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -143,20 +139,18 @@ export function GoalsTracker() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <Progress value={progress} className={cn("h-1.5", isCompleted ? "bg-green-100" : "bg-slate-100")}>
+                    <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div 
-                        className={cn("h-full transition-all rounded-full", isCompleted ? "bg-green-500" : "bg-primary")} 
+                        className={cn("h-full transition-all", isCompleted ? "bg-green-500" : "bg-primary")} 
                         style={{ width: `${progress}%` }} 
                       />
-                    </Progress>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                    </div>
+                    <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-tighter">
+                      <span className="text-slate-400">
                         {Math.round(progress)}% Complete
                       </span>
                       {isCompleted && (
-                        <span className="text-[9px] font-black text-green-600 uppercase tracking-tighter">
-                          Goal Reached!
-                        </span>
+                        <span className="text-green-600">Goal Reached!</span>
                       )}
                     </div>
                   </div>

@@ -130,34 +130,34 @@ export function AIPredictiveChart() {
 
   return (
     <Card className="border-primary/20 gradient-ai-subtle overflow-hidden">
-      <CardHeader className="pb-2 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl gradient-ai shadow-lg shadow-primary/20">
-              <Brain className="w-5 h-5 text-primary-foreground" />
+      <CardHeader className="pb-1 p-3 sm:p-6 text-slate-900">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl gradient-ai shadow-lg shadow-primary/20 flex-shrink-0">
+              <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
-            <div>
-              <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                Predictive Spending Analysis
-                <AIBadge variant="inline" />
+            <div className="min-w-0">
+              <CardTitle className="text-sm sm:text-lg font-bold tracking-tight flex items-center gap-1.5 flex-wrap">
+                Spending Analysis
+                <AIBadge variant="small" />
               </CardTitle>
-              <p className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider font-medium">
-                AI Forecast based on {forecast?.historyCount || 0} months of behavior
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold truncate opacity-70">
+                AI Forecast based on history
               </p>
             </div>
           </div>
           {forecast && (
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-sm transition-all ${
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border shadow-sm transition-all self-end sm:self-auto ${
               forecast.trend === 'decreasing' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-amber-500/10 border-amber-500/20 text-amber-600"
             }`}>
-              <TrendingUp className={`w-4 h-4 ${forecast.trend === 'decreasing' ? "rotate-180" : ""}`} />
-              <span className="text-xs font-bold uppercase tracking-tight">{forecast.confidence}% AI Confidence</span>
+              <TrendingUp className={`w-3.5 h-3.5 ${forecast.trend === 'decreasing' ? "rotate-180" : ""}`} />
+              <span className="text-[10px] font-black uppercase tracking-tight">{forecast.confidence}% AI Confidence</span>
             </div>
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] mt-6">
+      <CardContent className="p-3 sm:p-6 pt-0">
+        <div className="h-[180px] sm:h-[300px] mt-2 sm:mt-6">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 35, right: 15, left: 0, bottom: 0 }}>
               <defs>
@@ -171,8 +171,8 @@ export function AIPredictiveChart() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₺${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} />
+              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₺${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--card))",
@@ -236,14 +236,14 @@ export function AIPredictiveChart() {
         </div>
         
         {/* Legend */}
-        <div className="flex items-center justify-center gap-10 mt-8">
-          <div className="flex items-center gap-2.5 group">
-            <div className="w-3.5 h-3.5 rounded-full bg-[#2563eb] shadow-sm shadow-blue-500/40 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Actual Spending</span>
+        <div className="flex items-center justify-center gap-6 sm:gap-10 mt-4 sm:mt-8">
+          <div className="flex items-center gap-2 group">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] shadow-sm shadow-blue-500/40 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Actual</span>
           </div>
-          <div className="flex items-center gap-2.5 group">
-            <div className="w-3.5 h-3.5 rounded-full border-2 border-dashed border-[#d97706] bg-amber-600/10 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Prediction</span>
+          <div className="flex items-center gap-2 group">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-dashed border-[#d97706] bg-amber-600/10 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Predicted</span>
           </div>
         </div>
       </CardContent>
