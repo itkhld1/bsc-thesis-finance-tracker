@@ -70,36 +70,36 @@ export function AIInsightsPanel() {
 
   return (
     <Card className="border-primary/20 gradient-ai-subtle overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2.5 rounded-xl gradient-ai animate-scale-pulse flex-shrink-0">
+      <CardHeader className="pb-3 px-4 sm:px-6">
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-start gap-3 text-lg font-semibold">
+            <div className="p-2.5 rounded-xl gradient-ai animate-scale-pulse flex-shrink-0 mt-1 sm:mt-0">
               <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                AI Financial Insights
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="truncate">AI Financial Insights</span>
                 <AIBadge variant="inline" />
               </div>
-              <p className="text-xs text-muted-foreground font-normal mt-0.5">
+              <p className="text-xs text-muted-foreground font-normal leading-relaxed">
                 Real-time analysis of your financial behavior
               </p>
             </div>
           </CardTitle>
           
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50 flex-1 sm:flex-none justify-center">
-              <Activity className="w-4 h-4 text-success animate-pulse" />
-              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Live Analysis</span>
+          <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background/60 border border-border/50 flex-1 sm:flex-none justify-center">
+              <Activity className="w-3.5 h-3.5 text-success animate-pulse" />
+              <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-tight">Live Analysis</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50 flex-1 sm:flex-none justify-center">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{insights.length} insights</span>
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background/60 border border-border/50 flex-1 sm:flex-none justify-center">
+              <BarChart3 className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-tight">{insights.length} insights</span>
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         {insights.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-20" />
@@ -119,20 +119,20 @@ export function AIInsightsPanel() {
         )}
 
         {/* AI Status Footer */}
-        <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between flex-wrap gap-4">
+        <div className="mt-6 pt-4 border-t border-border/50 flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex gap-1">
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse" style={{ animationDelay: "150ms" }} />
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse" style={{ animationDelay: "300ms" }} />
+            <div className="flex gap-1 flex-shrink-0">
+              <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" style={{ animationDelay: "150ms" }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" style={{ animationDelay: "300ms" }} />
             </div>
-            <span className="text-xs text-muted-foreground">
-              Deep Neural Network model active and processing
+            <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
+              Neural Network model active and processing
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground">Last updated just now</span>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Updated just now</span>
           </div>
         </div>
       </CardContent>
