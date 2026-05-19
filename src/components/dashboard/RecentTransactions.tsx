@@ -88,7 +88,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-border max-h-[300px] overflow-y-auto scrollbar-none">
           {recentExpenses.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               No recent transactions found.

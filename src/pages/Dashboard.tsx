@@ -216,14 +216,14 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <SummaryCard
-          title="Net Cash Flow"
+          title="Net Flow"
           value={formatCurrency(netCashFlow)}
           comparisonValue={compareWithPrevious ? formatCurrency(comparisonNetCashFlow) : undefined}
           icon={Wallet}
           variant={netCashFlow >= 0 ? "primary" : "warning"}
-          description={netCashFlow >= 0 ? "Surplus this month" : "Deficit this month"}
+          description={netCashFlow >= 0 ? "Surplus" : "Deficit"}
           trend={compareWithPrevious && comparisonExpensesTotal > 0 ? {
             value: cashFlowTrend,
             isPositive: cashFlowTrend >= 0,
@@ -231,13 +231,13 @@ export default function Dashboard() {
           } : undefined}
         />
         <SummaryCard
-          title="Monthly Income"
+          title="Income"
           value={formatCurrency(monthlyIncome)}
           icon={TrendingUp}
           action={<EditIncomeDialog />}
         />
         <SummaryCard
-          title="Monthly Expenses"
+          title="Expenses"
           value={formatCurrency(monthlyExpensesTotal)}
           comparisonValue={compareWithPrevious ? formatCurrency(comparisonExpensesTotal) : undefined}
           icon={TrendingDown}
@@ -248,7 +248,7 @@ export default function Dashboard() {
           } : undefined}
         />
         <SummaryCard
-          title="Savings Rate"
+          title="Savings"
           value={`${savingsRate}%`}
           comparisonValue={compareWithPrevious ? `${comparisonSavingsRate}%` : undefined}
           icon={PiggyBank}
@@ -261,7 +261,7 @@ export default function Dashboard() {
       </div>
 
       {/* Full Width Cohesive List */}
-      <div className="space-y-10 sm:space-y-12">
+      <div className="space-y-6 sm:space-y-12">
         <AIFeatureHighlight expenses={expenses || []} />
         
         <GoalsTracker />
