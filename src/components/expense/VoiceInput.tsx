@@ -148,26 +148,26 @@ export function VoiceInput() {
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="text-xl">Voice Input</CardTitle>
-        <CardDescription>Speak your expense (Turkish supported)</CardDescription>
+    <Card className="h-full border-slate-100 shadow-sm text-slate-900">
+      <CardHeader className="p-4 sm:p-6 pb-2">
+        <CardTitle className="text-base sm:text-xl font-bold tracking-tight">Voice Entry</CardTitle>
+        <CardDescription className="text-[10px] sm:text-xs">Speak your expense (Turkish supported)</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center space-y-6">
+      <CardContent className="flex flex-col items-center space-y-4 sm:space-y-6 p-4 sm:p-6 pt-2">
         <Button
           size="lg"
           onClick={toggleRecording}
           disabled={state === "processing"}
           className={cn(
-            "w-24 h-24 rounded-full transition-all duration-300 relative",
+            "w-20 h-20 sm:w-24 sm:h-24 rounded-full transition-all duration-300 relative",
             state === "listening" ? "bg-destructive animate-pulse" : "gradient-primary"
           )}
         >
-          {state === "listening" ? <MicOff className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
+          {state === "listening" ? <MicOff className="w-8 h-8 sm:w-10 sm:h-10" /> : <Mic className="w-8 h-8 sm:w-10 sm:h-10" />}
           {state === "listening" && <div className="absolute inset-0 rounded-full bg-destructive/20 animate-ping" />}
         </Button>
 
-        <p className="text-sm font-medium">
+        <p className="text-[10px] sm:text-sm font-bold uppercase tracking-widest text-slate-400">
           {state === "idle" && "Tap to start"}
           {state === "listening" && "Listening..."}
           {state === "stopped" && (transcript ? "Review Transcript" : "No speech detected")}
@@ -176,32 +176,30 @@ export function VoiceInput() {
         </p>
 
         {transcript && (
-          <div className="w-full p-3 bg-muted rounded-lg text-sm italic border border-border">
+          <div className="w-full p-3 bg-slate-50 rounded-xl text-xs sm:text-sm italic border border-slate-100 text-slate-600">
             "{transcript}"
           </div>
         )}
 
         {state === "review" && parsedData && (
-          <div className="w-full space-y-4">
-            <div className="p-4 bg-primary/5 border rounded-xl space-y-2 text-sm text-left">
-              <p><strong>Amount:</strong> ₺{parsedData.amount || '???'}</p>
-              <p><strong>Category:</strong> {parsedData.categoryId || 'Other'}</p>
-              <p><strong>Description:</strong> {parsedData.description}</p>
-              <p><strong>Date:</strong> {parsedData.date}</p>
+          <div className="w-full space-y-3">
+            <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl space-y-1.5 text-xs sm:text-sm text-left">
+              <p><strong className="text-primary uppercase text-[9px]">Amount:</strong> <span className="font-bold text-slate-900">₺{parsedData.amount || '???'}</span></p>
+              <p><strong className="text-primary uppercase text-[9px]">Category:</strong> <span className="font-bold text-slate-900 capitalize">{parsedData.categoryId || 'Other'}</span></p>
+              <p><strong className="text-primary uppercase text-[9px]">Description:</strong> <span className="font-bold text-slate-900">{parsedData.description}</span></p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleReset} className="flex-1">Discard</Button>
-              <Button onClick={handleSaveExpense} className="flex-1 gradient-primary" disabled={!parsedData.amount}>Save</Button>
+              <Button variant="outline" onClick={handleReset} className="flex-1 h-9 text-xs font-bold uppercase tracking-wider">Discard</Button>
+              <Button onClick={handleSaveExpense} className="flex-1 h-9 gradient-primary text-xs font-bold uppercase tracking-wider" disabled={!parsedData.amount}>Save</Button>
             </div>
           </div>
         )}
 
         {state === "stopped" && transcript && !parsedData && (
-          <Button onClick={handleProcessTranscript} className="w-full gradient-primary">
+          <Button onClick={handleProcessTranscript} className="w-full h-10 gradient-primary font-bold uppercase tracking-wider text-xs">
             Analyze Voice
           </Button>
         )}
       </CardContent>
-    </Card>
-  );
+    </Card>  );
 }

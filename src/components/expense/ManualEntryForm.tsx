@@ -103,29 +103,29 @@ export function ManualEntryForm() {
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="text-xl">Manual Entry</CardTitle>
-        <CardDescription>Enter expense details manually</CardDescription>
+    <Card className="h-full border-slate-100 shadow-sm text-slate-900">
+      <CardHeader className="p-4 sm:p-6 pb-2">
+        <CardTitle className="text-base sm:text-xl font-bold tracking-tight">Manual Entry</CardTitle>
+        <CardDescription className="text-[10px] sm:text-xs">Enter expense details manually</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6 pt-2">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
             <FormField
               control={form.control}
               name="amount"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400">Amount</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₺</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₺</span>
                       <Input
                         {...field}
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        className="pl-7"
+                        className="pl-7 h-10 sm:h-11 font-bold text-lg"
                       />
                     </div>
                   </FormControl>
@@ -134,91 +134,79 @@ export function ManualEntryForm() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={categoriesLoading ? "Loading..." : categoriesError ? "Error loading" : "Select category"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categoriesLoading ? (
-                        <SelectItem value="loading" disabled>
-                          Loading categories...
-                        </SelectItem>
-                      ) : categoriesError ? (
-                        <SelectItem value="error" disabled>
-                          Error: {categoriesFetchError?.message}
-                        </SelectItem>
-                      ) : categories?.length === 0 ? (
-                        <SelectItem value="no-categories" disabled>
-                          No categories found
-                        </SelectItem>
-                      ) : (
-                        categories?.map((cat) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-10 sm:h-11 font-medium">
+                          <SelectValue placeholder={categoriesLoading ? "..." : "Select"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.name}
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col space-y-1">
+                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full h-10 sm:h-11 pl-3 text-left font-medium",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? format(field.value, "MMM d, yyyy") : <span>Pick a date</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400">Description</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="What was this expense for?" />
+                    <Input {...field} placeholder="What was this for?" className="h-10 sm:h-11" />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -228,14 +216,14 @@ export function ManualEntryForm() {
               control={form.control}
               name="notes"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes (optional)</FormLabel>
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400">Notes (optional)</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Add any additional notes..."
-                      className="resize-none"
-                      rows={3}
+                      placeholder="Details..."
+                      className="resize-none text-sm"
+                      rows={2}
                     />
                   </FormControl>
                   <FormMessage />
@@ -245,7 +233,7 @@ export function ManualEntryForm() {
 
             <Button
               type="submit"
-              className="w-full gradient-primary hover:opacity-90"
+              className="w-full h-11 gradient-primary font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20"
               disabled={isSubmitting || categoriesLoading || categoriesError || !token}
             >
               {isSubmitting ? (
@@ -254,12 +242,11 @@ export function ManualEntryForm() {
                   Saving...
                 </>
               ) : (
-                "Add Expense"
+                "Record Expense"
               )}
             </Button>
           </form>
         </Form>
       </CardContent>
-    </Card>
-  );
+    </Card>  );
 }

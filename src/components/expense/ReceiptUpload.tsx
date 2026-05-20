@@ -115,12 +115,12 @@ export function ReceiptUpload() {
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="text-xl">Receipt Upload</CardTitle>
-        <CardDescription>Upload a receipt for automatic extraction (Turkish/English)</CardDescription>
+    <Card className="h-full border-slate-100 shadow-sm text-slate-900">
+      <CardHeader className="p-4 sm:p-6 pb-2">
+        <CardTitle className="text-base sm:text-xl font-bold tracking-tight">Receipt Scan</CardTitle>
+        <CardDescription className="text-[10px] sm:text-xs">OCR extraction (Turkish/English)</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-2">
         {state === "idle" && (
           <>
             <div
@@ -131,20 +131,20 @@ export function ReceiptUpload() {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={cn(
-                "border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer",
+                "border-2 border-dashed rounded-xl p-4 sm:p-8 text-center transition-all duration-200 cursor-pointer",
                 isDragging
                   ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  : "border-slate-200 hover:border-primary/50 hover:bg-slate-50"
               )}
               onClick={() => document.getElementById('receipt-input')?.click()}
             >
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Upload className="w-7 h-7 text-primary" />
+              <div className="flex flex-col items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Drag & drop your receipt</p>
-                  <p className="text-sm text-muted-foreground mt-1">or click to browse</p>
+                  <p className="text-xs sm:text-base font-bold text-slate-700">Drop your receipt</p>
+                  <p className="text-[10px] sm:text-sm text-slate-400 font-medium">or click to browse</p>
                 </div>
                 <input
                   id="receipt-input"
@@ -157,11 +157,11 @@ export function ReceiptUpload() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" asChild>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <Button variant="outline" className="h-9 text-[10px] font-bold uppercase tracking-wider" asChild>
                 <label className="cursor-pointer">
-                  <Image className="w-4 h-4 mr-2" />
-                  Choose File
+                  <Image className="w-3.5 h-3.5 mr-1.5" />
+                  Files
                   <input
                     type="file"
                     accept="image/*"
@@ -170,10 +170,10 @@ export function ReceiptUpload() {
                   />
                 </label>
               </Button>
-              <Button variant="outline" className="flex-1" asChild>
+              <Button variant="outline" className="h-9 text-[10px] font-bold uppercase tracking-wider" asChild>
                 <label className="cursor-pointer">
-                  <Camera className="w-4 h-4 mr-2" />
-                  Take Photo
+                  <Camera className="w-3.5 h-3.5 mr-1.5" />
+                  Camera
                   <input
                     type="file"
                     accept="image/*"
@@ -188,46 +188,41 @@ export function ReceiptUpload() {
         )}
 
         {state === "processing" && (
-          <div className="text-center py-8">
-            <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-            <p className="font-medium text-foreground">Reading receipt with OCR...</p>
-            <p className="text-sm text-muted-foreground mt-1">{fileName}</p>
+          <div className="text-center py-6">
+            <Loader2 className="w-10 h-10 text-primary mx-auto mb-3 animate-spin" />
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">Scanning Receipt...</p>
+            <p className="text-[10px] text-slate-400 mt-1 truncate">{fileName}</p>
           </div>
         )}
 
         {state === "complete" && parsedData && (
-          <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-2 text-green-500">
-              <Check className="w-5 h-5" />
-              <span className="font-medium">Extraction complete!</span>
+          <div className="space-y-3 animate-fade-in">
+            <div className="flex items-center gap-2 text-emerald-600">
+              <Check className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Scan Complete!</span>
             </div>
 
-            <div className="p-4 bg-muted rounded-xl space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Amount:</span>
-                <span className="font-bold text-foreground">₺{parsedData.amount?.toFixed(2) || '0.00'}</span>
+            <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400 font-bold uppercase text-[9px]">Amount:</span>
+                <span className="font-black text-slate-900">₺{(Number(parsedData.amount) || 0).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Category:</span>
-                <span className="font-medium text-foreground uppercase">{parsedData.categoryId}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">File:</span>
-                <span className="text-xs text-foreground truncate max-w-[150px]">{fileName}</span>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400 font-bold uppercase text-[9px]">Category:</span>
+                <span className="font-black text-slate-900 uppercase">{parsedData.categoryId}</span>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={handleReset} className="flex-1">
-                <X className="w-4 h-4 mr-2" /> Discard
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleReset} className="flex-1 h-9 text-xs font-bold uppercase tracking-wider">
+                Discard
               </Button>
-              <Button onClick={handleSaveExpense} className="flex-1 gradient-primary">
-                <Check className="w-4 h-4 mr-2" /> Save
+              <Button onClick={handleSaveExpense} className="flex-1 h-9 gradient-primary text-xs font-bold uppercase tracking-wider">
+                Save
               </Button>
             </div>
           </div>
         )}
       </CardContent>
-    </Card>
-  );
+    </Card>  );
 }
