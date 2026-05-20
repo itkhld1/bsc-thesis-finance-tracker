@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PiggyBank, TrendingUp, TrendingDown, Wallet } from "lucide-react";
