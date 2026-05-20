@@ -162,43 +162,35 @@ export default function Budget() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in pb-10 text-slate-900">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 sm:px-0">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Budget</h1>
-          <p className="text-muted-foreground mt-1">Real-time category limits and spending</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Budget</h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Real-time limits and spending</p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => {}}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {months.map(month => (
-                  <SelectItem key={month} value={month}>{month}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {[2024, 2025, 2026, 2027].map(year => (
-                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-lg border border-slate-200 shrink-0">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {}}>
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <div className="flex items-center gap-1">
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="h-7 w-[90px] text-[10px] font-bold uppercase border-none bg-transparent">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map(month => (
+                    <SelectItem key={month} value={month} className="text-xs">{month}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {}}>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
           </div>
-          <Button variant="outline" size="icon" onClick={() => {}}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
@@ -206,26 +198,28 @@ export default function Budget() {
 
       <AIBudgetOptimizer currentCategories={categories} onApply={applyOptimizedBudget} />
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Category Budgets</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/5 text-primary" 
-              onClick={() => document.getElementById('ai-optimize-trigger')?.click()}>
-              <Sparkles className="h-4 w-4" /> Optimize with AI
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setManageDialogOpen(true)}
-            >
-              <Settings2 className="h-4 w-4" /> Manage
-            </Button>
+      <Card className="border-slate-100 shadow-sm overflow-hidden">
+        <CardHeader className="p-4 sm:p-6 pb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Category Budgets</CardTitle>
+            <div className="flex gap-1.5 w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="h-8 px-2.5 text-[9px] font-black uppercase tracking-tighter gap-1.5 border-primary/20 text-primary hover:bg-primary/5 flex-1 sm:flex-none" 
+                onClick={() => document.getElementById('ai-optimize-trigger')?.click()}>
+                <Sparkles className="w-3.5 h-3.5" /> AI Optimize
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 px-2.5 text-[9px] font-black uppercase tracking-tighter gap-1.5 flex-1 sm:flex-none"
+                onClick={() => setManageDialogOpen(true)}
+              >
+                <Settings2 className="w-3.5 h-3.5" /> Manage
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="p-3 sm:p-6 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {categories.map(category => (
               <CategoryBudgetCard key={category.id} category={category} onEdit={handleEditCategory} />
             ))}
@@ -233,11 +227,13 @@ export default function Budget() {
         </CardContent>
       </Card>
 
-      <AIBudgetPredictions />
+      <div className="space-y-6">
+        <AIBudgetPredictions />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BudgetChart categories={categories} />
-        <SpendingTrendChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <BudgetChart categories={categories} />
+          <SpendingTrendChart />
+        </div>
       </div>
 
       <EditBudgetDialog category={editingCategory} open={dialogOpen} onOpenChange={setDialogOpen} onSave={handleSaveBudget} />
