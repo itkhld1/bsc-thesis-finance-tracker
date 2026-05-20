@@ -160,27 +160,27 @@ export default function Expenses() {
 
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in pb-10 text-slate-900">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 sm:px-0">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Expenses</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage and track all your expenses
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Expenses</h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+            Manage and track all your spending
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleDownloadPDF} disabled={isGeneratingPDF} className="gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider h-9 sm:h-10 px-3 sm:px-4">
-            {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Report PDF
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <Button variant="outline" onClick={handleDownloadPDF} disabled={isGeneratingPDF} className="gap-1.5 text-[9px] font-black uppercase tracking-tighter h-8 px-2.5 flex-1 sm:flex-none">
+            {isGeneratingPDF ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            PDF
           </Button>
-          <Button variant="outline" onClick={handleExportCSV} className="gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider h-9 sm:h-10 px-3 sm:px-4">
-            <Download className="w-4 h-4" />
-            Export CSV
+          <Button variant="outline" onClick={handleExportCSV} className="gap-1.5 text-[9px] font-black uppercase tracking-tighter h-8 px-2.5 flex-1 sm:flex-none">
+            <Download className="w-3.5 h-3.5" />
+            CSV
           </Button>
-          <Button asChild size="sm" className="gradient-primary h-9 sm:h-10 px-3 sm:px-5 font-black uppercase tracking-widest text-[10px] shadow-md shadow-primary/20">
+          <Button asChild size="sm" className="gradient-primary h-8 px-3 font-black uppercase tracking-widest text-[9px] shadow-md shadow-primary/20 flex-1 sm:flex-none">
             <Link to="/add-expense">
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-3.5 h-3.5 mr-1" />
               Add
             </Link>
           </Button>
@@ -188,25 +188,27 @@ export default function Expenses() {
       </div>
 
       {/* Filters */}
-      <ExpenseFilters
-        search={search}
-        onSearchChange={setSearch}
-        category={category}
-        onCategoryChange={setCategory}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-        onClearFilters={handleClearFilters}
-      />
+      <div className="px-1 sm:px-0">
+        <ExpenseFilters
+          search={search}
+          onSearchChange={setSearch}
+          category={category}
+          onCategoryChange={setCategory}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          onClearFilters={handleClearFilters}
+        />
+      </div>
 
       {/* Summary */}
-      <div className="flex items-center justify-between text-sm">
-        <p className="text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{filteredExpenses.length}</span> expenses
+      <div className="flex items-center justify-between px-2 py-2 bg-slate-50 border border-slate-100 rounded-lg mx-1 sm:mx-0">
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          <span className="text-slate-900">{filteredExpenses.length}</span> Expenses
         </p>
-        <p className="text-muted-foreground">
-          Total: <span className="font-semibold text-primary">₺{totalAmount.toFixed(2)}</span>
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          Total: <span className="text-primary font-black text-sm ml-1">₺{totalAmount.toFixed(2)}</span>
         </p>
       </div>
 

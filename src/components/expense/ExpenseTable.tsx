@@ -362,8 +362,8 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) { // onEdit and on
         </Table>
       </Card>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-3">
+      {/* Mobile Cards with Internal Scroll */}
+      <div className="md:hidden space-y-2 max-h-[500px] overflow-y-auto scrollbar-none pr-1">
         {expenses.map((expense, index) => {
           const category = getCategoryInfo(expense.categoryId);
           const Icon = iconMap[category.icon || "MoreHorizontal"] || MoreHorizontal;
@@ -373,39 +373,41 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) { // onEdit and on
             <Card
               key={expense.id}
               className={cn(
-                "p-4 animate-fade-in transition-all",
+                "p-3 animate-fade-in transition-all border-slate-100 shadow-sm relative overflow-hidden text-slate-900",
                 isSelected && "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
               )}
               style={{ animationDelay: `${index * 30}ms` }}
               onClick={() => toggleSelect(expense.id)}
             >
-              <div className="flex items-start gap-3">
-                <div className="mt-1">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 flex items-center h-full pt-0.5">
                    <Checkbox 
                     checked={isSelected} 
                     onCheckedChange={() => toggleSelect(expense.id)}
                     onClick={(e) => e.stopPropagation()}
+                    className="rounded-md border-slate-300"
                   />
                 </div>
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${category.color}20` }}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: `${category.color}15` }}
                 >
-                  <Icon className="w-5 h-5" style={{ color: category.color }} />
+                  <Icon className="w-4 h-4" style={{ color: category.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-foreground">{expense.description}</p>
-                      <p className="text-sm text-muted-foreground">{category.name}</p>
-                    </div>
-                    <p className="font-semibold text-foreground whitespace-nowrap">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-bold text-xs truncate leading-tight">{expense.description}</p>
+                    <p className="font-black text-xs whitespace-nowrap text-slate-900">
                       ₺{expense.amount.toFixed(2)}
                     </p>
                   </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <p className="text-sm text-muted-foreground">{formatDate(expense.date)}</p>
-                    <div className="flex gap-1">
+                  <div className="flex items-center justify-between mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{category.name}</span>
+                      <span className="text-[12px] text-slate-200">•</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{formatDate(expense.date)}</span>
+                    </div>
+                    <div className="flex gap-0.5">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -413,32 +415,31 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) { // onEdit and on
                           e.stopPropagation();
                           handleEdit(expense);
                         }}
-                        className="h-8 w-8"
+                        className="h-7 w-7 text-slate-400 hover:text-primary"
                       >
-                        <Pencil className="w-4 h-4" />
+                        <Pencil className="w-3.5 h-3.5" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive"
+                            className="h-7 w-7 text-slate-400 hover:text-destructive"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete your
-                              expense.
+                            <AlertDialogTitle className="text-base font-bold">Delete Expense?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm font-medium">
+                              This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(expense.id)}>Continue</AlertDialogAction>
+                            <AlertDialogCancel className="h-9 text-xs font-bold uppercase tracking-wider">Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(expense.id)} className="h-9 text-xs font-bold uppercase tracking-wider bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

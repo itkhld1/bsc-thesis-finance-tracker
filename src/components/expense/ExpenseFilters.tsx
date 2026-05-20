@@ -43,79 +43,65 @@ export function ExpenseFilters({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
+    <div className="space-y-3">
+      <div className="flex flex-col sm:flex-row gap-2">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           <Input
-            placeholder="Search expenses..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9"
+            className="pl-8 h-9 text-xs sm:text-sm bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-lg"
           />
         </div>
 
-        {/* Category Filter */}
-        <Select value={category} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder={isLoading ? "Loading..." : isError ? "Error" : "Category"} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {isLoading ? (
-              <SelectItem value="loading" disabled>
-                Loading categories...
-              </SelectItem>
-            ) : isError ? (
-              <SelectItem value="error" disabled>
-                Error: {error?.message}
-              </SelectItem>
-            ) : categories?.length === 0 ? (
-              <SelectItem value="no-categories" disabled>
-                No categories found
-              </SelectItem>
-            ) : (
-              categories?.map((cat) => (
+        <div className="grid grid-cols-2 sm:flex gap-2">
+          {/* Category Filter */}
+          <Select value={category} onValueChange={onCategoryChange}>
+            <SelectTrigger className="h-9 text-xs font-bold uppercase tracking-tight bg-slate-50 border-slate-200 rounded-lg">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {categories?.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
                 </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {/* Sort */}
-        <Select value={sortBy} onValueChange={onSortChange}>
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="date-desc">Newest first</SelectItem>
-            <SelectItem value="date-asc">Oldest first</SelectItem>
-            <SelectItem value="amount-desc">Highest amount</SelectItem>
-            <SelectItem value="amount-asc">Lowest amount</SelectItem>
-          </SelectContent>
-        </Select>
+          {/* Sort */}
+          <Select value={sortBy} onValueChange={onSortChange}>
+            <SelectTrigger className="h-9 text-xs font-bold uppercase tracking-tight bg-slate-50 border-slate-200 rounded-lg">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date-desc">Newest</SelectItem>
+              <SelectItem value="date-asc">Oldest</SelectItem>
+              <SelectItem value="amount-desc">Highest</SelectItem>
+              <SelectItem value="amount-asc">Lowest</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Date Range */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn(
-              "w-full sm:w-auto justify-start text-left font-normal",
-              !dateRange && "text-muted-foreground"
+              "h-9 text-xs font-bold uppercase tracking-tight bg-slate-50 border-slate-200 justify-start text-left rounded-lg",
+              !dateRange && "text-slate-400"
             )}>
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
               {dateRange?.from ? (
                 dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd")}
-                  </>
+                  <span className="truncate">{format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd")}</span>
                 ) : (
-                  format(dateRange.from, "LLL dd, yyyy")
+                  format(dateRange.from, "LLL dd")
                 )
               ) : (
-                "Date range"
+                "Range"
               )}
             </Button>
           </PopoverTrigger>
@@ -126,7 +112,7 @@ export function ExpenseFilters({
               defaultMonth={dateRange?.from}
               selected={dateRange}
               onSelect={onDateRangeChange}
-              numberOfMonths={2}
+              numberOfMonths={1}
               className="pointer-events-auto"
             />
           </PopoverContent>
@@ -135,33 +121,26 @@ export function ExpenseFilters({
 
       {/* Active Filters */}
       {hasActiveFilters && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-muted-foreground">Active filters:</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
           {search && (
-            <Badge variant="secondary" className="gap-1">
-              Search: {search}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => onSearchChange("")} />
+            <Badge variant="secondary" className="gap-1 h-5 text-[9px] font-bold uppercase py-0 px-2 bg-slate-100 text-slate-600 border-none">
+              "{search}"
+              <X className="w-2.5 h-2.5 cursor-pointer opacity-60" onClick={() => onSearchChange("")} />
             </Badge>
           )}
           {category !== "all" && (
-            <Badge variant="secondary" className="gap-1">
+            <Badge variant="secondary" className="gap-1 h-5 text-[9px] font-bold uppercase py-0 px-2 bg-slate-100 text-slate-600 border-none">
               {getCategoryName(category)}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => onCategoryChange("all")} />
-            </Badge>
-          )}
-          {dateRange && (
-            <Badge variant="secondary" className="gap-1">
-              {format(dateRange.from!, "MMM d")} - {dateRange.to ? format(dateRange.to, "MMM d") : "..."}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => onDateRangeChange(undefined)} />
+              <X className="w-2.5 h-2.5 cursor-pointer opacity-60" onClick={() => onCategoryChange("all")} />
             </Badge>
           )}
           <Button
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-destructive hover:text-destructive"
+            className="h-5 px-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900"
           >
-            Clear all
+            Reset
           </Button>
         </div>
       )}
