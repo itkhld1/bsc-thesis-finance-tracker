@@ -1388,15 +1388,27 @@ app.get('/budget/optimize', protect, async (req, res) => {
       actuals[e.categoryId] = (actuals[e.categoryId] || 0) + (Number(e.amount) / 3);
     });
     
-    console.log(`[AI Hybrid Optimizer] Running for User ${userId}`);
+    console.log(`[AI Hybrid Optimizer] Running for User ${userId} with income ${userIncome}`);
     
     const scriptPath = path.join(__dirname, '../../aura-finance-ai/optimize.py');
-    const actualsJson = JSON.stringify(actuals).replace(/"/g, '\\"');
+    const actualsJson = JSON.stringify(actuals);
+    // Escape single quotes for shell safety
+    const safeActualsJson = actualsJson.replace(/'/g, "'\\''");
     
-    exec(`python3 ${scriptPath} ${userIncome} "${actualsJson}"`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout) => {
+    exec(`python3 "${scriptPath}" ${userIncome} '${safeActualsJson}'`, { cwd: path.join(__dirname, '../../aura-finance-ai') }, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Exec error: ${error}`);
-        return res.status(500).json({ message: "AI Optimization failed" });
+        console.error(`Exec error: ${error.message}`);
+        console.error(`Stderr: ${stderr}`);
+        return res.status(500).json({ 
+          message: "AI Optimization failed", 
+          error: error.message,
+          stderr: stderr 
+        });
+      }
+
+      if (!stdout && stderr) {
+        console.error(`Python Stderr: ${stderr}`);
+        return res.status(500).json({ message: "AI Script error", details: stderr });
       }
 
       try {
